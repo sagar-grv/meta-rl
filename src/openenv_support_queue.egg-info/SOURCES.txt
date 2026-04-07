@@ -1,8 +1,0 @@
-pyproject.toml
-src/openenv_support_queue.egg-info/PKG-INFO
-src/openenv_support_queue.egg-info/SOURCES.txt
-src/openenv_support_queue.egg-info/dependency_links.txt
-src/openenv_support_queue.egg-info/requires.txt
-src/openenv_support_queue.egg-info/top_level.txt
-tests/test_environment_contract.py
-tests/test_inference_contract.py
