@@ -1,4 +1,117 @@
 ---
+title: Support Queue OpenEnv
+emoji: 📨
+colorFrom: gray
+colorTo: yellow
+sdk: docker
+pinned: false
+---
+
+# Support Queue OpenEnv
+
+Support Queue OpenEnv is a deterministic customer support benchmark built for the OpenEnv Round 1 submission flow. It simulates common real-world support work such as triaging login issues, drafting refund-safe replies, and escalating disputes with compliant handoffs.
+
+The environment is designed to be simple to run, easy to validate, and useful for evaluating agent behavior on a realistic business workflow.
+
+## Tasks
+
+The benchmark includes three graded tasks with increasing difficulty:
+
+- `ticket_triage` - route a login-related ticket to support and respond with a useful diagnostic question.
+- `reply_drafting` - draft a policy-safe reply for a refund request.
+- `escalation_resolution` - escalate a billing dispute with a compliant handoff.
+
+Each task returns a score in the range `0.0` to `1.0`.
+
+## Environment Interface
+
+The environment follows the OpenEnv `reset() / step() / state()` contract.
+
+### Action Space
+
+`SupportQueueAction`
+
+- `route`: routing decision for the ticket.
+- `reply`: the response text written by the agent.
+
+### Observation Space
+
+`SupportQueueObservation`
+
+- `ticket_id`: identifier for the active ticket.
+- `status`: current ticket status.
+- `subject`: short ticket subject line.
+- `summary`: fuller ticket description.
+
+### Reward Signal
+
+The reward function is deterministic and uses task-specific signals:
+
+- exact route match
+- required keyword match
+- task-specific compliance phrasing
+- optional penalty for vague or generic replies
+
+## Repository Structure
+
+- `envs/support_queue_env/` - environment implementation, models, and task registry
+- `envs/support_queue_env/server/` - FastAPI app and environment wrapper
+- `inference.py` - baseline script used for evaluation
+- `tests/` - automated contract and inference tests
+- `Dockerfile` - Hugging Face Space container definition
+
+## Setup
+
+Requirements:
+
+- Python 3.10+
+- Docker
+- Hugging Face account/token for deployment
+
+Install and test locally:
+
+```powershell
+python -m venv .venv
+& .\.venv\Scripts\Activate.ps1
+pip install -e .[dev]
+pytest -q
+```
+
+## Baseline Inference
+
+The root-level `inference.py` uses the OpenAI client and reads runtime configuration from environment variables:
+
+- `API_BASE_URL`
+- `MODEL_NAME`
+- `HF_TOKEN`
+
+Example:
+
+```powershell
+$env:API_BASE_URL="https://router.huggingface.co/v1"
+$env:MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
+$env:HF_TOKEN="hf_your_token"
+$env:PYTHONPATH="envs;."
+python .\inference.py
+```
+
+The script emits structured logs in the required `[START]`, `[STEP]`, and `[END]` format.
+
+## Container
+
+The Docker image listens on port `7860`, which is compatible with Hugging Face Spaces.
+
+## Validation
+
+Before submission, run the local checks and the submission validator against your live Space URL.
+
+```powershell
+pytest -q
+python .\inference.py
+bash ./scripts/validate-submission.sh https://your-space-name.hf.space .
+```
+
+---
 title: Anything You Want
 emoji: 👀
 colorFrom: gray
