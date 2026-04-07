@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import Body, FastAPI
 from pydantic import BaseModel
 
 from support_queue_env.models import SupportQueueAction
@@ -26,7 +26,7 @@ def health() -> dict[str, str]:
 
 
 @app.post("/reset")
-def reset(request: ResetRequest | None = None) -> dict[str, object]:
+def reset(request: ResetRequest | None = Body(default=None)) -> dict[str, object]:
     global environment
     task_name = request.task_name if request is not None else "ticket_triage"
     seed = request.seed if request is not None else None
