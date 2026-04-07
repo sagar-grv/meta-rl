@@ -26,9 +26,11 @@ def health() -> dict[str, str]:
 
 
 @app.post("/reset")
-def reset(request: ResetRequest) -> dict[str, object]:
+def reset(request: ResetRequest | None = None) -> dict[str, object]:
     global environment
-    environment = SupportQueueEnvironment(seed=request.seed, task_name=request.task_name)
+    task_name = request.task_name if request is not None else "ticket_triage"
+    seed = request.seed if request is not None else None
+    environment = SupportQueueEnvironment(seed=seed, task_name=task_name)
     result = environment.reset()
     return result.model_dump()
 
