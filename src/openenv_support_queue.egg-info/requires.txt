@@ -1,0 +1,7 @@
+fastapi>=0.104
+uvicorn>=0.24
+pydantic>=2.6
+openai>=1.40
+
+[dev]
+pytest>=8.0
