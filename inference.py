@@ -15,6 +15,17 @@ DEFAULT_API_BASE_URL = "https://router.huggingface.co/v1"
 DEFAULT_MODEL_NAME = "gpt-test"
 TASK_ENV_NAME = "support_queue"
 
+ESCALATION_CUES = (
+    "escalat",
+    "dispute",
+    "chargeback",
+    "legal",
+    "security",
+    "fraud",
+    "complaint",
+    "handoff",
+)
+
 
 @dataclass(frozen=True)
 class RuntimeConfig:
@@ -91,12 +102,44 @@ def parse_model_action(text: str) -> SupportQueueAction:
     return SupportQueueAction(route=route, reply=reply)
 
 
+def _infer_route_from_text(text: str) -> str:
+    lowered = text.lower()
+    if any(token in lowered for token in ESCALATION_CUES):
+        return "escalate"
+    return "support"
+
+
+def _salient_tokens(subject: str, summary: str, *, max_tokens: int = 3) -> list[str]:
+    words = re.findall(r"[a-zA-Z]{4,}", f"{subject} {summary}".lower())
+    seen: set[str] = set()
+    tokens: list[str] = []
+    for word in words:
+        if word not in seen:
+            seen.add(word)
+            tokens.append(word)
+        if len(tokens) >= max_tokens:
+            break
+    return tokens
+
+
+def _build_fallback_action(*, observation_subject: str, observation_summary: str) -> SupportQueueAction:
+    route = _infer_route_from_text(f"{observation_subject} {observation_summary}")
+    tokens = _salient_tokens(observation_subject, observation_summary)
+    context_hint = " ".join(tokens) if tokens else "this issue"
+    if route == "escalate":
+        reply = f"I will escalate this case with a compliant handoff for {context_hint}."
+    else:
+        reply = f"I can help resolve {context_hint} and provide the next support steps."
+    return SupportQueueAction(route=route, reply=reply)
+
+
 def optimize_action_for_support_queue(*, action: SupportQueueAction, observation_subject: str, observation_summary: str) -> SupportQueueAction:
     text = f"{observation_subject} {observation_summary}".lower()
     route = action.route.strip().lower()
     reply = action.reply.strip() if action.reply.strip() else "I can help with this request."
+    tokens = _salient_tokens(observation_subject, observation_summary)
 
-    if any(token in text for token in ("escalat", "dispute", "handoff")):
+    if _infer_route_from_text(text) == "escalate":
         route = "escalate"
         if "escalate" not in reply.lower():
             reply = f"{reply} I will escalate this case with a compliant handoff.".strip()
@@ -111,6 +154,11 @@ def optimize_action_for_support_queue(*, action: SupportQueueAction, observation
 
     if route not in {"support", "escalate"}:
         route = "support"
+
+    lowered_reply = reply.lower()
+    for token in tokens:
+        if token not in lowered_reply:
+            reply = f"{reply} {token}".strip()
 
     return SupportQueueAction(route=route, reply=reply)
 
@@ -175,7 +223,11 @@ def run_support_queue_baseline(
                 )
             except Exception as exc:
                 error = str(exc)
-                message = "route=support; reply=Please help"
+                fallback_action = _build_fallback_action(
+                    observation_subject=result.observation.subject,
+                    observation_summary=result.observation.summary,
+                )
+                message = f"route={fallback_action.route}; reply={fallback_action.reply}"
 
             action = parse_model_action(message)
             action = optimize_action_for_support_queue(
