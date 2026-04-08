@@ -111,6 +111,18 @@ python .\inference.py
 bash ./scripts/validate-submission.sh https://your-space-name.hf.space .
 ```
 
+### Evaluator-like Local Endpoint Probe
+
+To catch edge-case API issues before submission, run a local probe that mimics common evaluator checks (reset without body, task-by-task step scoring, strict score bounds, state transitions, invalid payload rejection, and deterministic output checks).
+
+```powershell
+$env:PYTHONPATH="envs;."
+python -m uvicorn support_queue_env.server.app:app --host 127.0.0.1 --port 7861
+python .\scripts\probe_endpoints.py --base-url http://127.0.0.1:7861
+```
+
+The probe exits non-zero if any check fails, so you can use it in CI or pre-submit scripts.
+
 ---
 title: Anything You Want
 emoji: 👀

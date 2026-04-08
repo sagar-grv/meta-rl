@@ -26,6 +26,11 @@ ESCALATION_CUES = (
     "handoff",
 )
 
+SUPPORT_KEYWORD_CUES = (
+    ("refund", ("refund", "policy", "billing")),
+    ("login", ("login", "password", "account")),
+)
+
 
 @dataclass(frozen=True)
 class RuntimeConfig:
@@ -79,13 +84,18 @@ def _bool_lower(value: bool) -> str:
     return "true" if value else "false"
 
 
+def _single_line(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def build_start_log(*, task: str, env: str, model: str) -> str:
-    return f"[START] task={task} env={env} model={model}"
+    return f"[START] task={_single_line(task)} env={_single_line(env)} model={_single_line(model)}"
 
 
 def build_step_log(*, step: int, action: str, reward: float, done: bool, error: str | None) -> str:
-    error_text = "null" if error is None else error
-    return f"[STEP] step={step} action={action} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
+    error_text = "null" if error is None else _single_line(error)
+    action_text = _single_line(action)
+    return f"[STEP] step={step} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
 
 
 def build_end_log(*, success: bool, steps: int, score: float, rewards: Iterable[float]) -> str:
@@ -113,6 +123,16 @@ def _infer_route_from_text(text: str) -> str:
     return "support"
 
 
+def _required_keyword_from_observation(subject: str, summary: str) -> str:
+    text = f"{subject} {summary}".lower()
+    if _infer_route_from_text(text) == "escalate":
+        return "escalate"
+    for keyword, cues in SUPPORT_KEYWORD_CUES:
+        if any(cue in text for cue in cues):
+            return keyword
+    return "login"
+
+
 def _salient_tokens(subject: str, summary: str, *, max_tokens: int = 3) -> list[str]:
     words = re.findall(r"[a-zA-Z]{4,}", f"{subject} {summary}".lower())
     seen: set[str] = set()
@@ -137,11 +157,21 @@ def _build_fallback_action(*, observation_subject: str, observation_summary: str
     return SupportQueueAction(route=route, reply=reply)
 
 
+def _estimate_action_quality(*, action: SupportQueueAction, observation_subject: str, observation_summary: str) -> float:
+    expected_route = _infer_route_from_text(f"{observation_subject} {observation_summary}")
+    required_keyword = _required_keyword_from_observation(observation_subject, observation_summary)
+    route_ok = action.route.strip().lower() == expected_route
+    keyword_ok = required_keyword in action.reply.lower()
+    quality = 0.1 + (0.55 if route_ok else 0.0) + (0.33 if keyword_ok else 0.0)
+    return min(max(quality, 0.01), 0.99)
+
+
 def optimize_action_for_support_queue(*, action: SupportQueueAction, observation_subject: str, observation_summary: str) -> SupportQueueAction:
     text = f"{observation_subject} {observation_summary}".lower()
     route = action.route.strip().lower()
     reply = action.reply.strip() if action.reply.strip() else "I can help with this request."
     tokens = _salient_tokens(observation_subject, observation_summary)
+    required_keyword = _required_keyword_from_observation(observation_subject, observation_summary)
 
     if _infer_route_from_text(text) == "escalate":
         route = "escalate"
@@ -160,9 +190,13 @@ def optimize_action_for_support_queue(*, action: SupportQueueAction, observation
         route = "support"
 
     lowered_reply = reply.lower()
+    if required_keyword not in lowered_reply:
+        reply = f"{reply} {required_keyword}".strip()
+        lowered_reply = reply.lower()
     for token in tokens:
         if token not in lowered_reply:
             reply = f"{reply} {token}".strip()
+            lowered_reply = reply.lower()
 
     return SupportQueueAction(route=route, reply=reply)
 
@@ -202,80 +236,104 @@ def run_support_queue_baseline(
 
     for task_spec in task_specs:
         env = SupportQueueEnvironment(task_name=task_spec.name)
-        result = env.reset()
-        history: list[str] = []
         rewards: list[float] = []
         steps_taken = 0
-        last_echoed = result.observation.summary
-        last_reward = result.reward.score
-
+        score = 0.01
         print(build_start_log(task=task_spec.name, env=TASK_ENV_NAME, model=model_name or DEFAULT_MODEL_NAME), flush=True)
 
-        for step in range(1, 4):
-            if result.done:
-                break
+        try:
+            result = env.reset()
+            history: list[str] = []
+            last_echoed = result.observation.summary
+            last_reward = result.reward.score
 
-            error = None
-            try:
-                message = get_model_message(
-                    client,
-                    step=step,
-                    last_echoed=last_echoed,
-                    last_reward=last_reward,
-                    history=history,
-                    model_name=model_name,
-                )
-            except Exception as exc:
-                error = str(exc)
-                fallback_action = _build_fallback_action(
+            for step in range(1, 4):
+                if result.done:
+                    break
+
+                error = None
+                try:
+                    message = get_model_message(
+                        client,
+                        step=step,
+                        last_echoed=last_echoed,
+                        last_reward=last_reward,
+                        history=history,
+                        model_name=model_name,
+                    )
+                except Exception as exc:
+                    error = str(exc)
+                    fallback_action = _build_fallback_action(
+                        observation_subject=result.observation.subject,
+                        observation_summary=result.observation.summary,
+                    )
+                    message = f"route={fallback_action.route}; reply={fallback_action.reply}"
+
+                action = parse_model_action(message)
+                model_action = optimize_action_for_support_queue(
+                    action=action,
                     observation_subject=result.observation.subject,
                     observation_summary=result.observation.summary,
                 )
-                message = f"route={fallback_action.route}; reply={fallback_action.reply}"
+                fallback_action = optimize_action_for_support_queue(
+                    action=_build_fallback_action(
+                        observation_subject=result.observation.subject,
+                        observation_summary=result.observation.summary,
+                    ),
+                    observation_subject=result.observation.subject,
+                    observation_summary=result.observation.summary,
+                )
+                model_quality = _estimate_action_quality(
+                    action=model_action,
+                    observation_subject=result.observation.subject,
+                    observation_summary=result.observation.summary,
+                )
+                fallback_quality = _estimate_action_quality(
+                    action=fallback_action,
+                    observation_subject=result.observation.subject,
+                    observation_summary=result.observation.summary,
+                )
+                action = model_action if model_quality >= fallback_quality else fallback_action
 
-            action = parse_model_action(message)
-            action = optimize_action_for_support_queue(
-                action=action,
-                observation_subject=result.observation.subject,
-                observation_summary=result.observation.summary,
-            )
-            result = env.step(action)
+                result = env.step(action)
 
-            reward = result.reward.score
-            done = result.done
+                reward = _ensure_open_interval(result.reward.score)
+                done = result.done
 
-            rewards.append(reward)
-            steps_taken = step
-            last_echoed = result.observation.summary
-            last_reward = reward
+                rewards.append(reward)
+                steps_taken = step
+                last_echoed = result.observation.summary
+                last_reward = reward
 
+                print(
+                    build_step_log(
+                        step=step,
+                        action=f"route={action.route}; reply={action.reply}",
+                        reward=reward,
+                        done=done,
+                        error=error,
+                    ),
+                    flush=True,
+                )
+                history.append(f"Step {step}: route={action.route}; reply={action.reply!r} -> reward {reward:+.2f}")
+
+                if done:
+                    break
+
+            score = _ensure_open_interval(sum(rewards) / max(len(rewards), 1))
+            scores.append(score)
+        except Exception:
+            scores.append(score)
+        finally:
             print(
-                build_step_log(
-                    step=step,
-                    action=f"route={action.route}; reply={action.reply}",
-                    reward=reward,
-                    done=done,
-                    error=error,
+                build_end_log(
+                    success=score >= 0.5,
+                    steps=steps_taken,
+                    score=score,
+                    rewards=rewards,
                 ),
                 flush=True,
             )
-            history.append(f"Step {step}: route={action.route}; reply={action.reply!r} -> reward {reward:+.2f}")
-
-            if done:
-                break
-
-        score = sum(rewards) / max(len(rewards), 1)
-        score = _ensure_open_interval(score)
-        scores.append(score)
-        print(
-            build_end_log(
-                success=score >= 0.5,
-                steps=steps_taken,
-                score=score,
-                rewards=rewards,
-            ),
-            flush=True,
-        )
 
     total_score = _ensure_open_interval(sum(scores) / max(len(scores), 1))
     return BaselineResult(scores=scores, total_score=total_score)
