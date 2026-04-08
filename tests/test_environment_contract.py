@@ -34,3 +34,40 @@ def test_state_advances_after_step():
     env.step(SupportQueueAction(route="support", reply="We are looking into this."))
 
     assert env.state().step_count == 1
+
+
+def test_keyword_stuffing_is_penalized_for_escalation_task():
+    env_stuffed = SupportQueueEnvironment(seed=7, task_name="escalation_resolution")
+    env_stuffed.reset()
+    stuffed = env_stuffed.step(
+        SupportQueueAction(
+            route="support",
+            reply="login refund escalate policy billing handoff dispute account password customer request issue",
+        )
+    )
+
+    env_targeted = SupportQueueEnvironment(seed=7, task_name="escalation_resolution")
+    env_targeted.reset()
+    targeted = env_targeted.step(
+        SupportQueueAction(
+            route="escalate",
+            reply="I will escalate this case with a compliant handoff.",
+        )
+    )
+
+    assert stuffed.reward.score <= 0.30
+    assert stuffed.reward.score < targeted.reward.score
+
+
+def test_overlong_irrelevant_reply_is_penalized():
+    env = SupportQueueEnvironment(seed=7, task_name="ticket_triage")
+    env.reset()
+
+    long_irrelevant_reply = " ".join(["lorem"] * 300)
+    long_result = env.step(SupportQueueAction(route="support", reply=long_irrelevant_reply))
+
+    env = SupportQueueEnvironment(seed=7, task_name="ticket_triage")
+    env.reset()
+    concise_result = env.step(SupportQueueAction(route="support", reply="I can help resolve your login issue."))
+
+    assert long_result.reward.score < concise_result.reward.score

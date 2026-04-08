@@ -133,3 +133,26 @@ def test_run_support_queue_baseline_uses_best_action_when_model_output_is_poor()
     result = run_support_queue_baseline(client=PoorClient(), task_specs=[TASK_SPECS[2]])
     assert len(result.scores) == 1
     assert result.scores[0] >= 0.9
+
+
+def test_keyword_stuffing_policy_underperforms_contextual_policy():
+    from support_queue_env.server.your_environment import SupportQueueEnvironment
+
+    def score(task_name: str, route: str, reply: str) -> float:
+        env = SupportQueueEnvironment(seed=7, task_name=task_name)
+        env.reset()
+        return env.step(SupportQueueAction(route=route, reply=reply)).reward.score
+
+    stuffed_scores = [
+        score("ticket_triage", "support", "login refund escalate policy billing handoff dispute account password customer request issue"),
+        score("reply_drafting", "support", "login refund escalate policy billing handoff dispute account password customer request issue"),
+        score("escalation_resolution", "support", "login refund escalate policy billing handoff dispute account password customer request issue"),
+    ]
+    contextual_scores = [
+        score("ticket_triage", "support", "I can help resolve your login issue."),
+        score("reply_drafting", "support", "I can help with your refund request."),
+        score("escalation_resolution", "escalate", "I will escalate this case with a compliant handoff."),
+    ]
+
+    assert sum(stuffed_scores) / len(stuffed_scores) <= 0.60
+    assert sum(stuffed_scores) / len(stuffed_scores) < sum(contextual_scores) / len(contextual_scores)
