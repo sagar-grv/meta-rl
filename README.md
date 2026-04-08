@@ -131,6 +131,17 @@ python .\scripts\submission_pipeline.py analyze-dashboard --input-file .\dashboa
 
 The analyzer maps dashboard text to one of these buckets: score-range, reproducibility, endpoint-contract, logging-format, deployment-runtime, anti-exploit, or quality-regression. It also returns a recommended fix and a next regression case to add before the next submission.
 
+### Judging-Focused Local Audit
+
+Run this before a final resubmission to evaluate six judging-oriented layers locally (interface contract, anti-exploit ordering, hard-task challenge behavior, and determinism checks).
+
+```powershell
+$env:PYTHONPATH="envs;."
+python .\scripts\judging_audit.py
+```
+
+This command exits with a non-zero code if any audit gate fails.
+
 ### Evaluator-like Local Endpoint Probe
 
 To catch edge-case API issues before submission, run a local probe that mimics common evaluator checks (reset without body, task-by-task step scoring, strict score bounds, state transitions, invalid payload rejection, and deterministic output checks).
