@@ -43,6 +43,6 @@ def test_run_support_queue_baseline_returns_scores():
     result = run_support_queue_baseline(client=client, task_specs=TASK_SPECS)
 
     assert len(result.scores) == 3
-    assert result.total_score >= 0.0
-    assert result.total_score <= 1.0
+    assert all(0.0 < score < 1.0 for score in result.scores)
+    assert 0.0 < result.total_score < 1.0
     assert client.chat.completions.count >= 3

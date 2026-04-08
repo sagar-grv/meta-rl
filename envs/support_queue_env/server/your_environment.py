@@ -48,8 +48,9 @@ class SupportQueueEnvironment:
         expected_route = self._task_spec.expected_route
         route_is_correct = route in {expected_route, "support"} if expected_route == "support" else route == expected_route
         reply_has_keyword = self._task_spec.success_keyword in action.reply.lower()
-        reward_value = 0.2 + (0.5 if route_is_correct else 0.0) + (0.3 if reply_has_keyword else 0.0)
-        reward_value = min(reward_value, 1.0)
+        # Keep task score strictly inside (0, 1) for Phase-2 contract compliance.
+        reward_value = 0.1 + (0.55 if route_is_correct else 0.0) + (0.33 if reply_has_keyword else 0.0)
+        reward_value = min(max(reward_value, 0.01), 0.99)
         self._state = self._state.model_copy(update={"episode_done": True})
         return StepResult(
             observation=SupportQueueObservation(

@@ -93,6 +93,10 @@ def build_end_log(*, success: bool, steps: int, score: float, rewards: Iterable[
     return f"[END] success={_bool_lower(success)} steps={steps} score={score:.2f} rewards={reward_text}"
 
 
+def _ensure_open_interval(score: float) -> float:
+    return min(max(score, 0.01), 0.99)
+
+
 def parse_model_action(text: str) -> SupportQueueAction:
     route_match = re.search(r"route\s*=\s*([^;\n]+)", text, flags=re.IGNORECASE)
     reply_match = re.search(r"reply\s*=\s*(.+)", text, flags=re.IGNORECASE | re.DOTALL)
@@ -261,7 +265,7 @@ def run_support_queue_baseline(
                 break
 
         score = sum(rewards) / max(len(rewards), 1)
-        score = min(max(score, 0.0), 1.0)
+        score = _ensure_open_interval(score)
         scores.append(score)
         print(
             build_end_log(
@@ -273,7 +277,7 @@ def run_support_queue_baseline(
             flush=True,
         )
 
-    total_score = sum(scores) / max(len(scores), 1)
+    total_score = _ensure_open_interval(sum(scores) / max(len(scores), 1))
     return BaselineResult(scores=scores, total_score=total_score)
 
 

@@ -22,7 +22,7 @@ def test_step_returns_observation_reward_done_and_info():
     result = env.step(SupportQueueAction(route="support", reply="We are looking into this."))
 
     assert result.observation.ticket_id == "ticket-001"
-    assert 0.0 <= result.reward.score <= 1.0
+    assert 0.0 < result.reward.score < 1.0
     assert isinstance(result.done, bool)
     assert isinstance(result.info, dict)
 
