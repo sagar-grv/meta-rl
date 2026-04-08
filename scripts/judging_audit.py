@@ -37,6 +37,8 @@ def _policy_scores() -> dict[str, list[float]]:
             "support",
             "login refund escalate policy billing handoff dispute account password customer request issue",
         ),
+        "repetitive_keyword": lambda s, sm: ("support", "refund refund refund refund refund refund"),
+        "keyword_only": lambda s, sm: ("support", "login"),
         "empty_reply": lambda s, sm: ("support", ""),
         "overlong_irrelevant": lambda s, sm: ("support", " ".join(["lorem"] * 300)),
     }
@@ -80,11 +82,16 @@ def run_judging_audit() -> list[AuditCheck]:
             name="policy_ordering",
             passed=(
                 avg["contextual"] > avg["keyword_stuff"] > avg["always_support"]
-                and avg["overlong_irrelevant"] <= avg["always_support"]
+                and avg["contextual"] > avg["repetitive_keyword"]
+                and avg["keyword_only"] <= 0.45
+                and avg["overlong_irrelevant"] <= 0.25
+                and avg["overlong_irrelevant"] < avg["contextual"]
             ),
             detail=(
                 f"avg(contextual)={avg['contextual']:.3f}, avg(keyword_stuff)={avg['keyword_stuff']:.3f}, "
-                f"avg(always_support)={avg['always_support']:.3f}, avg(overlong_irrelevant)={avg['overlong_irrelevant']:.3f}"
+                f"avg(repetitive_keyword)={avg['repetitive_keyword']:.3f}, avg(keyword_only)={avg['keyword_only']:.3f}, "
+                f"avg(always_support)={avg['always_support']:.3f}, "
+                f"avg(overlong_irrelevant)={avg['overlong_irrelevant']:.3f}"
             ),
         )
     )

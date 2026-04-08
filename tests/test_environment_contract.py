@@ -71,3 +71,60 @@ def test_overlong_irrelevant_reply_is_penalized():
     concise_result = env.step(SupportQueueAction(route="support", reply="I can help resolve your login issue."))
 
     assert long_result.reward.score < concise_result.reward.score
+
+
+def test_repetitive_reply_is_penalized_against_contextual_reply():
+    env = SupportQueueEnvironment(seed=7, task_name="reply_drafting")
+    env.reset()
+    repetitive = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="refund refund refund refund refund refund please refund now",
+        )
+    )
+
+    env = SupportQueueEnvironment(seed=7, task_name="reply_drafting")
+    env.reset()
+    contextual = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="I can help with your refund request and share policy-safe next steps.",
+        )
+    )
+
+    assert repetitive.reward.score < contextual.reward.score
+
+
+def test_offtopic_keyword_only_reply_is_penalized_for_login_task():
+    env = SupportQueueEnvironment(seed=7, task_name="ticket_triage")
+    env.reset()
+    offtopic = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="refund billing policy refund policy billing",
+        )
+    )
+
+    env = SupportQueueEnvironment(seed=7, task_name="ticket_triage")
+    env.reset()
+    contextual = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="I can help resolve your login issue and guide the account recovery steps.",
+        )
+    )
+
+    assert offtopic.reward.score < contextual.reward.score
+
+
+def test_keyword_only_reply_does_not_receive_high_score():
+    env = SupportQueueEnvironment(seed=7, task_name="ticket_triage")
+    env.reset()
+    shortcut = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="login",
+        )
+    )
+
+    assert shortcut.reward.score <= 0.45
