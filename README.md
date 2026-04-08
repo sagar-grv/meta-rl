@@ -111,6 +111,26 @@ python .\inference.py
 bash ./scripts/validate-submission.sh https://your-space-name.hf.space .
 ```
 
+## Local Submission Pipeline
+
+Use the local pipeline to check the repo before every submission and to turn dashboard output into the next improvement pass.
+
+Preflight checks against a local server:
+
+```powershell
+$env:PYTHONPATH="envs;."
+python .\scripts\submission_pipeline.py preflight --base-url http://127.0.0.1:7861
+```
+
+Analyze pasted dashboard output or a saved text file:
+
+```powershell
+python .\scripts\submission_pipeline.py analyze-dashboard --input-text "Phase 2 failed: each task's score must be strictly between 0 and 1."
+python .\scripts\submission_pipeline.py analyze-dashboard --input-file .\dashboard-output.txt
+```
+
+The analyzer maps dashboard text to one of these buckets: score-range, reproducibility, endpoint-contract, logging-format, deployment-runtime, anti-exploit, or quality-regression. It also returns a recommended fix and a next regression case to add before the next submission.
+
 ### Evaluator-like Local Endpoint Probe
 
 To catch edge-case API issues before submission, run a local probe that mimics common evaluator checks (reset without body, task-by-task step scoring, strict score bounds, state transitions, invalid payload rejection, and deterministic output checks).
