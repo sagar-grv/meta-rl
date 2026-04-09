@@ -60,6 +60,11 @@ def test_infer_route_from_text_defaults_to_support():
     assert route == "support"
 
 
+def test_infer_route_from_text_escalates_on_unauthorized_charge_cue():
+    route = _infer_route_from_text("Customer reports an unauthorized card charge and requests compliance review")
+    assert route == "escalate"
+
+
 def test_build_fallback_action_uses_observation_context():
     action = _build_fallback_action(
         observation_subject="Billing escalation",
