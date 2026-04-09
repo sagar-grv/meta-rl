@@ -33,6 +33,8 @@ def _policy_scores() -> dict[str, list[float]]:
     policies = {
         "contextual": contextual,
         "always_support": lambda s, sm: ("support", "I can help."),
+        "polite_generic": lambda s, sm: ("support", "Thank you for contacting support. We are reviewing your case."),
+        "one_template": lambda s, sm: ("support", "I understand your concern and will assist with policy-compliant next steps."),
         "keyword_stuff": lambda s, sm: (
             "support",
             "login refund escalate policy billing handoff dispute account password customer request issue",
@@ -83,12 +85,15 @@ def run_judging_audit() -> list[AuditCheck]:
             passed=(
                 avg["contextual"] > avg["keyword_stuff"] > avg["always_support"]
                 and avg["contextual"] > avg["repetitive_keyword"]
+                and avg["contextual"] > avg["polite_generic"]
+                and avg["contextual"] > avg["one_template"]
                 and avg["keyword_only"] <= 0.45
                 and avg["overlong_irrelevant"] <= 0.25
                 and avg["overlong_irrelevant"] < avg["contextual"]
             ),
             detail=(
                 f"avg(contextual)={avg['contextual']:.3f}, avg(keyword_stuff)={avg['keyword_stuff']:.3f}, "
+                f"avg(polite_generic)={avg['polite_generic']:.3f}, avg(one_template)={avg['one_template']:.3f}, "
                 f"avg(repetitive_keyword)={avg['repetitive_keyword']:.3f}, avg(keyword_only)={avg['keyword_only']:.3f}, "
                 f"avg(always_support)={avg['always_support']:.3f}, "
                 f"avg(overlong_irrelevant)={avg['overlong_irrelevant']:.3f}"

@@ -128,3 +128,17 @@ def test_keyword_only_reply_does_not_receive_high_score():
     )
 
     assert shortcut.reward.score <= 0.45
+
+
+def test_contextual_success_score_is_high_but_not_saturated():
+    env = SupportQueueEnvironment(seed=7, task_name="ticket_triage")
+    env.reset()
+    strong = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="I can help resolve your login issue and guide account recovery steps.",
+        )
+    )
+
+    # Keep strong responses high while preserving gradient for judge-round robustness.
+    assert 0.75 <= strong.reward.score <= 0.97

@@ -19,6 +19,7 @@ ESCALATION_CUES = (
     "escalat",
     "dispute",
     "chargeback",
+    "unauthor",
     "legal",
     "security",
     "fraud",
