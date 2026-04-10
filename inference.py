@@ -99,9 +99,9 @@ def build_step_log(*, step: int, action: str, reward: float, done: bool, error: 
     return f"[STEP] step={step} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
 
 
-def build_end_log(*, success: bool, steps: int, score: float, rewards: Iterable[float]) -> str:
+def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str:
     reward_text = ",".join(f"{reward:.2f}" for reward in rewards)
-    return f"[END] success={_bool_lower(success)} steps={steps} score={score:.2f} rewards={reward_text}"
+    return f"[END] success={_bool_lower(success)} steps={steps} rewards={reward_text}"
 
 
 def _ensure_open_interval(score: float) -> float:
@@ -330,7 +330,6 @@ def run_support_queue_baseline(
                 build_end_log(
                     success=score >= 0.5,
                     steps=steps_taken,
-                    score=score,
                     rewards=rewards,
                 ),
                 flush=True,
