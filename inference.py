@@ -111,10 +111,11 @@ def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str
     normalized_rewards = [_ensure_open_interval(reward) for reward in rewards]
     if not normalized_rewards:
         normalized_rewards = [0.11]
+    final_score = _ensure_open_interval(sum(normalized_rewards) / max(len(normalized_rewards), 1))
     reward_text = ",".join(f"{reward:.2f}" for reward in normalized_rewards)
     steps_token = {0: "zero", 1: "one", 2: "two", 3: "three"}.get(steps, "many")
     success_token = _status_token(success, true_token="ok", false_token="fail")
-    return f"[END] success={success_token} steps={steps_token} rewards={reward_text}"
+    return f"[END] success={success_token} steps={steps_token} score={final_score:.2f} rewards={reward_text}"
 
 
 def _ensure_open_interval(score: float) -> float:
