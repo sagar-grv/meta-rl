@@ -99,10 +99,9 @@ def build_start_log(*, task: str, env: str, model: str) -> str:
 
 
 def build_step_log(*, step: int, action: str, reward: float, done: bool, error: str | None) -> str:
-    error_text = "null" if error is None else _single_line(re.sub(r"[^A-Za-z_]+", "", error) or "error")
-    action_text = "redacted"
-    step_token = {1: "one", 2: "two", 3: "three"}.get(step, "many")
-    return f"[STEP] step={step_token} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
+    error_text = "null" if error is None else _single_line(error)
+    action_text = _single_line(action)
+    return f"[STEP] step={step} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
 
 
 def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str:
@@ -110,8 +109,7 @@ def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str
     if not normalized_rewards:
         normalized_rewards = [0.11]
     reward_text = ",".join(f"{reward:.2f}" for reward in normalized_rewards)
-    steps_token = {0: "zero", 1: "one", 2: "two", 3: "three"}.get(steps, "many")
-    return f"[END] success={_bool_lower(success)} steps={steps_token} rewards={reward_text}"
+    return f"[END] success={_bool_lower(success)} steps={steps} rewards={reward_text}"
 
 
 def _ensure_open_interval(score: float) -> float:
@@ -320,7 +318,7 @@ def run_support_queue_baseline(
                 print(
                     build_step_log(
                         step=step,
-                        action=f"route={action.route}; reply={action.reply}",
+                        action=f"route:{action.route}",
                         reward=reward,
                         done=done,
                         error=error,
