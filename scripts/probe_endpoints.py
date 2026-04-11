@@ -52,11 +52,12 @@ def run_probe(base_url: str) -> list[CheckResult]:
     results.append(_check("health_200", status == 200 and health_body.get("status") == "ok", "health returned 200/ok", f"health failed: status={status}, body={health_body}"))
 
     status, reset_body = _request_json(base_url, "/reset", "POST")
+    reset_reward = float(reset_body.get("reward", {}).get("score", -1)) if isinstance(reset_body, dict) else -1
     results.append(
         _check(
             "reset_without_body",
-            status == 200 and isinstance(reset_body.get("observation"), dict),
-            "reset accepted POST without body",
+            status == 200 and isinstance(reset_body.get("observation"), dict) and 0.0 < reset_reward < 1.0,
+            "reset accepted POST without body and score in (0,1)",
             f"reset no-body failed: status={status}, body={reset_body}",
         )
     )
@@ -64,12 +65,19 @@ def run_probe(base_url: str) -> list[CheckResult]:
     for task in TASKS:
         status, reset_task_body = _request_json(base_url, "/reset", "POST", {"task_name": task, "seed": 7})
         observation = reset_task_body.get("observation", {}) if isinstance(reset_task_body, dict) else {}
-        task_ok = status == 200 and observation.get("ticket_id") and observation.get("subject") and observation.get("summary")
+        reset_reward = float(reset_task_body.get("reward", {}).get("score", -1)) if isinstance(reset_task_body, dict) else -1
+        task_ok = (
+            status == 200
+            and observation.get("ticket_id")
+            and observation.get("subject")
+            and observation.get("summary")
+            and 0.0 < reset_reward < 1.0
+        )
         results.append(
             _check(
                 f"task_reset_{task}",
                 bool(task_ok),
-                f"task {task} reset returned observation",
+                f"task {task} reset returned observation and score in (0,1)",
                 f"task {task} reset failed: status={status}, body={reset_task_body}",
             )
         )

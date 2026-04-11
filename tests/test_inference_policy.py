@@ -130,7 +130,7 @@ def test_optimize_action_for_support_queue_normalizes_invalid_route():
 def test_run_support_queue_baseline_survives_model_failure_with_fallback():
     result = run_support_queue_baseline(client=BrokenClient(), task_specs=[TASK_SPECS[0]])
     assert len(result.scores) == 1
-    assert 0.0 <= result.scores[0] <= 1.0
+    assert all(0.0 < score < 1.0 for score in result.scores)
     assert result.scores[0] >= 0.5
 
 

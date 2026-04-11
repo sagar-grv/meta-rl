@@ -25,7 +25,8 @@ def test_reset_step_and_state_endpoints_work():
 
     assert reset_response.status_code == 200
     assert reset_response.json()["observation"]["ticket_id"] == "ticket-001"
+    assert 0.0 < reset_response.json()["reward"]["score"] < 1.0
     assert step_response.status_code == 200
-    assert step_response.json()["reward"]["score"] >= 0.0
+    assert 0.0 < step_response.json()["reward"]["score"] < 1.0
     assert state_response.status_code == 200
     assert state_response.json()["step_count"] == 1

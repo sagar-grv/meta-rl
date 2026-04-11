@@ -8,6 +8,7 @@ def test_reset_uses_requested_task_name():
     result = env.reset()
 
     assert result.info["task_name"] == "reply_drafting"
+    assert 0.0 < result.reward.score < 1.0
     assert env.state().task_name == "reply_drafting"
 
 

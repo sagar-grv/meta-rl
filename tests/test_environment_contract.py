@@ -11,6 +11,7 @@ def test_reset_returns_initial_observation_and_state():
 
     assert result.observation.ticket_id == "ticket-001"
     assert result.observation.status == "open"
+    assert 0.0 < result.reward.score < 1.0
     assert env.state().step_count == 0
     assert env.state().episode_done is False
 

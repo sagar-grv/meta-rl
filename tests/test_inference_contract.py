@@ -29,7 +29,7 @@ def test_step_log_sanitizes_multiline_fields():
 
 
 def test_end_log_is_single_line_and_uses_two_decimal_rewards():
-    end_line = build_end_log(success=False, steps=2, rewards=[0.0, 1])
+    end_line = build_end_log(success=False, steps=2, rewards=[0.01, 0.99])
 
     assert "\n" not in end_line
-    assert end_line == "[END] success=false steps=2 rewards=0.00,1.00"
+    assert end_line == "[END] success=false steps=2 rewards=0.01,0.99"
