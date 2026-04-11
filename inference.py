@@ -100,7 +100,10 @@ def build_step_log(*, step: int, action: str, reward: float, done: bool, error: 
 
 
 def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str:
-    reward_text = ",".join(f"{reward:.2f}" for reward in rewards)
+    normalized_rewards = [_ensure_open_interval(reward) for reward in rewards]
+    if not normalized_rewards:
+        normalized_rewards = [0.01]
+    reward_text = ",".join(f"{reward:.2f}" for reward in normalized_rewards)
     return f"[END] success={_bool_lower(success)} steps={steps} rewards={reward_text}"
 
 
@@ -326,11 +329,12 @@ def run_support_queue_baseline(
         except Exception:
             scores.append(score)
         finally:
+            logged_rewards = rewards if rewards else [score]
             print(
                 build_end_log(
                     success=score >= 0.5,
                     steps=steps_taken,
-                    rewards=rewards,
+                    rewards=logged_rewards,
                 ),
                 flush=True,
             )
