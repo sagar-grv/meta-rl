@@ -225,6 +225,7 @@ def get_model_message(
         temperature=0,
         max_tokens=128,
         stream=False,
+        timeout=20,
     )
     text = (completion.choices[0].message.content or "").strip()
     return text if text else "route=support; reply=Please help"
@@ -345,7 +346,8 @@ def run_support_queue_baseline(
 
 def main() -> None:
     config = load_runtime_config()
-    client = OpenAI(base_url=config.api_base_url, api_key=config.hf_token)
+    # Keep request latency bounded so inference always finishes all tasks under evaluator limits.
+    client = OpenAI(base_url=config.api_base_url, api_key=config.hf_token, timeout=20, max_retries=0)
     run_support_queue_baseline(client=client, task_specs=TASK_SPECS, model_name=config.model_name)
 
 

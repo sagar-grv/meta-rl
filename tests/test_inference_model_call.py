@@ -60,3 +60,4 @@ def test_get_model_message_uses_openai_client():
 
     assert message == "route=support; reply=Please reset your password."
     assert client.chat.completions.calls[0]["model"] == "gpt-test"
+    assert client.chat.completions.calls[0]["timeout"] == 20
