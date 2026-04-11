@@ -10,20 +10,11 @@ except Exception:  # pragma: no cover
 from support_queue_env.models import SupportQueueAction, SupportQueueObservation
 from support_queue_env.server.your_environment import SupportQueueEnvironment
 
-
-_environment = SupportQueueEnvironment()
-
-
-def create_environment() -> SupportQueueEnvironment:
-    return _environment
-
-
 app = create_app(
-    create_environment,
+    SupportQueueEnvironment,
     SupportQueueAction,
     SupportQueueObservation,
     env_name="support_queue_env",
-    max_concurrent_envs=1,
 )
 
 

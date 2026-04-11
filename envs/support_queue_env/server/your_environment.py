@@ -23,7 +23,10 @@ class SupportQueueEnvironment:
             current_ticket_id=self._task_spec.ticket_id,
             task_name=self._task_spec.name,
         )
-        self.state = self._state
+
+    @property
+    def state(self) -> SupportQueueState:
+        return self._state
 
     def reset(self, *args: object, task_name: str | None = None, seed: int | None = None, **_: object) -> StepResult:
         if args and isinstance(args[0], dict):
@@ -44,7 +47,6 @@ class SupportQueueEnvironment:
             current_ticket_id=self._task_spec.ticket_id,
             task_name=self._task_spec.name,
         )
-        self.state = self._state
         return StepResult(
             observation=SupportQueueObservation(
                 ticket_id=self._task_spec.ticket_id,
@@ -108,7 +110,6 @@ class SupportQueueEnvironment:
         reward_value -= generic_penalty + sparse_penalty + overlong_penalty + stuffing_penalty + repetition_penalty
         reward_value = clamp_open_score(min(reward_value, 0.89))
         self._state = self._state.model_copy(update={"episode_done": True})
-        self.state = self._state
         return StepResult(
             observation=SupportQueueObservation(
                 ticket_id=self._state.current_ticket_id,
