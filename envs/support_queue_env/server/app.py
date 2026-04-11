@@ -11,8 +11,11 @@ from support_queue_env.models import SupportQueueAction, SupportQueueObservation
 from support_queue_env.server.your_environment import SupportQueueEnvironment
 
 
+_environment = SupportQueueEnvironment()
+
+
 def create_environment() -> SupportQueueEnvironment:
-    return SupportQueueEnvironment()
+    return _environment
 
 
 app = create_app(
