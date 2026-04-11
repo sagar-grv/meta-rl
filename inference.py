@@ -103,7 +103,7 @@ def build_step_log(*, step: int, action: str, reward: float, done: bool, error: 
 def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str:
     normalized_rewards = [_ensure_open_interval(reward) for reward in rewards]
     if not normalized_rewards:
-        normalized_rewards = [0.01]
+        normalized_rewards = [0.11]
     reward_text = ",".join(f"{reward:.2f}" for reward in normalized_rewards)
     return f"[END] success={_bool_lower(success)} steps=s{steps} rewards={reward_text}"
 
@@ -168,7 +168,7 @@ def _estimate_action_quality(*, action: SupportQueueAction, observation_subject:
     route_ok = action.route.strip().lower() == expected_route
     keyword_ok = required_keyword in action.reply.lower()
     quality = 0.1 + (0.55 if route_ok else 0.0) + (0.33 if keyword_ok else 0.0)
-    return min(max(quality, 0.01), 0.99)
+    return min(max(quality, 0.11), 0.89)
 
 
 def optimize_action_for_support_queue(*, action: SupportQueueAction, observation_subject: str, observation_summary: str) -> SupportQueueAction:
@@ -244,7 +244,7 @@ def run_support_queue_baseline(
         env = SupportQueueEnvironment(task_name=task_spec.name)
         rewards: list[float] = []
         steps_taken = 0
-        score = 0.01
+        score = 0.11
         print(build_start_log(task=task_spec.name, env=TASK_ENV_NAME, model=model_name or DEFAULT_MODEL_NAME), flush=True)
 
         try:

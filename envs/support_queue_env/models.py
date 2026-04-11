@@ -4,8 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-MIN_OPEN_SCORE = 0.01
-MAX_OPEN_SCORE = 0.99
+MIN_OPEN_SCORE = 0.11
+MAX_OPEN_SCORE = 0.89
 
 
 def clamp_open_score(value: float) -> float:

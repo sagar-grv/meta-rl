@@ -142,7 +142,7 @@ def test_contextual_success_score_is_high_but_not_saturated():
     )
 
     # Keep strong responses high while preserving gradient for judge-round robustness.
-    assert 0.75 <= strong.reward <= 0.97
+    assert 0.75 <= strong.reward <= 0.89
 
 
 def test_reward_model_clamps_boundary_scores_into_open_interval():
@@ -151,5 +151,5 @@ def test_reward_model_clamps_boundary_scores_into_open_interval():
 
     assert 0.0 < low.score < 1.0
     assert 0.0 < high.score < 1.0
-    assert low.score == pytest.approx(0.01)
-    assert high.score == pytest.approx(0.99)
+    assert low.score == pytest.approx(0.11)
+    assert high.score == pytest.approx(0.89)

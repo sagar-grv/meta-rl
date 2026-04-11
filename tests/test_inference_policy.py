@@ -137,7 +137,7 @@ def test_run_support_queue_baseline_survives_model_failure_with_fallback():
 def test_run_support_queue_baseline_uses_best_action_when_model_output_is_poor():
     result = run_support_queue_baseline(client=PoorClient(), task_specs=[TASK_SPECS[2]])
     assert len(result.scores) == 1
-    assert result.scores[0] >= 0.9
+    assert result.scores[0] >= 0.8
 
 
 def test_keyword_stuffing_policy_underperforms_contextual_policy():

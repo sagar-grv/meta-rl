@@ -52,7 +52,7 @@ class SupportQueueEnvironment:
                 subject=self._task_spec.subject,
                 summary=self._task_spec.summary,
             ),
-            reward=0.01,
+            reward=0.11,
             done=False,
             info={"task_name": self._state.task_name},
         )
@@ -106,7 +106,7 @@ class SupportQueueEnvironment:
         # Keep task score strictly inside (0, 1) and discourage shortcut strategies.
         reward_value = 0.08 + (0.55 if route_is_correct else 0.0) + keyword_credit + quality_credit
         reward_value -= generic_penalty + sparse_penalty + overlong_penalty + stuffing_penalty + repetition_penalty
-        reward_value = clamp_open_score(min(reward_value, 0.97))
+        reward_value = clamp_open_score(min(reward_value, 0.89))
         self._state = self._state.model_copy(update={"episode_done": True})
         self.state = self._state
         return StepResult(
