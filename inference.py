@@ -85,6 +85,10 @@ def _bool_lower(value: bool) -> str:
     return "true" if value else "false"
 
 
+def _status_token(value: bool, *, true_token: str, false_token: str) -> str:
+    return true_token if value else false_token
+
+
 def _single_line(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
@@ -99,7 +103,8 @@ def build_step_log(*, step: int, action: str, reward: float, done: bool, error: 
     # Keep logs parser-safe: avoid exposing free-form model text that can contain arbitrary numbers.
     action_text = "redacted"
     step_token = {1: "one", 2: "two", 3: "three"}.get(step, "many")
-    return f"[STEP] step={step_token} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
+    done_token = _status_token(done, true_token="complete", false_token="pending")
+    return f"[STEP] step={step_token} action={action_text} reward={reward:.2f} done={done_token} error={error_text}"
 
 
 def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str:
@@ -108,7 +113,8 @@ def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str
         normalized_rewards = [0.11]
     reward_text = ",".join(f"{reward:.2f}" for reward in normalized_rewards)
     steps_token = {0: "zero", 1: "one", 2: "two", 3: "three"}.get(steps, "many")
-    return f"[END] success={_bool_lower(success)} steps={steps_token} rewards={reward_text}"
+    success_token = _status_token(success, true_token="ok", false_token="fail")
+    return f"[END] success={success_token} steps={steps_token} rewards={reward_text}"
 
 
 def _ensure_open_interval(score: float) -> float:
