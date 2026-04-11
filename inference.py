@@ -90,14 +90,16 @@ def _single_line(text: str) -> str:
 
 
 def build_start_log(*, task: str, env: str, model: str) -> str:
-    return f"[START] task={_single_line(task)} env={_single_line(env)} model={_single_line(model)}"
+    safe_model = re.sub(r"\d+", "", _single_line(model)).strip() or "configured"
+    return f"[START] task={_single_line(task)} env={_single_line(env)} model={safe_model}"
 
 
 def build_step_log(*, step: int, action: str, reward: float, done: bool, error: str | None) -> str:
     error_text = "null" if error is None else _single_line(re.sub(r"[^A-Za-z_]+", "", error) or "error")
     # Keep logs parser-safe: avoid exposing free-form model text that can contain arbitrary numbers.
     action_text = "redacted"
-    return f"[STEP] step=s{step} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
+    step_token = {1: "one", 2: "two", 3: "three"}.get(step, "many")
+    return f"[STEP] step={step_token} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
 
 
 def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str:
@@ -105,7 +107,8 @@ def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str
     if not normalized_rewards:
         normalized_rewards = [0.11]
     reward_text = ",".join(f"{reward:.2f}" for reward in normalized_rewards)
-    return f"[END] success={_bool_lower(success)} steps=s{steps} rewards={reward_text}"
+    steps_token = {0: "zero", 1: "one", 2: "two", 3: "three"}.get(steps, "many")
+    return f"[END] success={_bool_lower(success)} steps={steps_token} rewards={reward_text}"
 
 
 def _ensure_open_interval(score: float) -> float:
