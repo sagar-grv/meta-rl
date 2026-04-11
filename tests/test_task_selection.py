@@ -21,3 +21,13 @@ def test_step_reports_task_specific_route_error():
     assert result.reward.score < 1.0
     assert result.info["task_name"] == "escalation_resolution"
     assert result.info["route"] == "triage"
+
+
+def test_unknown_task_name_falls_back_to_default_task():
+    env = SupportQueueEnvironment(task_name="unknown_hidden_task")
+
+    result = env.reset()
+
+    assert result.info["task_name"] == "ticket_triage"
+    assert env.state().task_name == "ticket_triage"
+    assert 0.0 < result.reward.score < 1.0

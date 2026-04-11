@@ -3,6 +3,9 @@ from __future__ import annotations
 from support_queue_env.models import TaskSpec
 
 
+DEFAULT_TASK_NAME = "ticket_triage"
+
+
 TASK_SPECS = [
     TaskSpec(
         name="ticket_triage",
@@ -39,3 +42,11 @@ def get_task_spec(task_name: str) -> TaskSpec:
         if task_spec.name == task_name:
             return task_spec
     raise ValueError(f"Unknown task_name: {task_name}")
+
+
+def resolve_task_spec(task_name: str | None) -> TaskSpec:
+    if task_name:
+        for task_spec in TASK_SPECS:
+            if task_spec.name == task_name:
+                return task_spec
+    return get_task_spec(DEFAULT_TASK_NAME)

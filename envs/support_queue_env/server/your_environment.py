@@ -10,14 +10,14 @@ from support_queue_env.models import (
     StepResult,
     clamp_open_score,
 )
-from support_queue_env.tasks import get_task_spec
+from support_queue_env.tasks import resolve_task_spec
 
 
 class SupportQueueEnvironment:
     def __init__(self, seed: int | None = None, task_name: str = "ticket_triage") -> None:
         self.seed = seed
-        self.task_name = task_name
-        self._task_spec = get_task_spec(task_name)
+        self._task_spec = resolve_task_spec(task_name)
+        self.task_name = self._task_spec.name
         self._state = SupportQueueState(
             step_count=0,
             episode_done=False,
@@ -26,7 +26,8 @@ class SupportQueueEnvironment:
         )
 
     def reset(self) -> StepResult:
-        self._task_spec = get_task_spec(self.task_name)
+        self._task_spec = resolve_task_spec(self.task_name)
+        self.task_name = self._task_spec.name
         self._state = SupportQueueState(
             step_count=0,
             episode_done=False,

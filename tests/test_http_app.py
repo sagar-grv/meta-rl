@@ -30,3 +30,16 @@ def test_reset_step_and_state_endpoints_work():
     assert 0.0 < step_response.json()["reward"]["score"] < 1.0
     assert state_response.status_code == 200
     assert state_response.json()["step_count"] == 1
+
+
+def test_reset_unknown_task_falls_back_to_default_task_with_valid_score():
+    with TestClient(app) as client:
+        reset_response = client.post(
+            "/reset",
+            json={"task_name": "unknown_hidden_task", "seed": 7},
+        )
+
+    assert reset_response.status_code == 200
+    body = reset_response.json()
+    assert body["info"]["task_name"] == "ticket_triage"
+    assert 0.0 < body["reward"]["score"] < 1.0

@@ -30,11 +30,23 @@ def _request_json(base_url: str, path: str, method: str = "GET", payload: dict[s
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             body = resp.read().decode("utf-8")
-            parsed = json.loads(body) if body else {}
+            if body:
+                try:
+                    parsed = json.loads(body)
+                except json.JSONDecodeError:
+                    parsed = {"raw": body}
+            else:
+                parsed = {}
             return int(resp.status), parsed
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8")
-        parsed = json.loads(body) if body else {}
+        if body:
+            try:
+                parsed = json.loads(body)
+            except json.JSONDecodeError:
+                parsed = {"raw": body}
+        else:
+            parsed = {}
         return int(exc.code), parsed
 
 
@@ -120,6 +132,18 @@ def run_probe(base_url: str) -> list[CheckResult]:
                 f"nondeterministic output for {task}: step1={step1}, step2={step2}",
             )
         )
+
+    unknown_status, unknown_body = _request_json(base_url, "/reset", "POST", {"task_name": "unknown_hidden_task", "seed": 7})
+    unknown_reward = float(unknown_body.get("reward", {}).get("score", -1)) if isinstance(unknown_body, dict) else -1
+    unknown_task = unknown_body.get("info", {}).get("task_name") if isinstance(unknown_body, dict) else None
+    results.append(
+        _check(
+            "unknown_task_fallback",
+            unknown_status == 200 and unknown_task in TASKS and 0.0 < unknown_reward < 1.0,
+            "unknown task reset safely fell back to a supported task with score in (0,1)",
+            f"unknown task handling invalid: status={unknown_status}, body={unknown_body}",
+        )
+    )
 
     status, _ = _request_json(base_url, "/step", "POST", {"route": 123, "reply": 456})
     results.append(
