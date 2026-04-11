@@ -2,7 +2,7 @@
 
 Date: 2026-04-11
 Branch: exp/improvement-cycle-3
-Base SHA: 7d52c4a36437e7efeb9129db545de3f11c529807
+Base SHA: caf0919566a36d90e7efb981c17c8f6c86d7864e
 
 ## Commands Run
 
@@ -18,7 +18,7 @@ Base SHA: 7d52c4a36437e7efeb9129db545de3f11c529807
 
 - avg(contextual)=0.890
 - avg(keyword_stuff)=0.430
-- avg(overlong_irrelevant)=0.243
+- avg(overlong_irrelevant)=0.190
 - hard-task contextual=0.890
 
 ## Decision
