@@ -157,6 +157,20 @@ python .\scripts\submission_evidence.py --strict --output .\submission-evidence.
 
 The command writes both `submission-evidence.md` and `submission-evidence.json`. Use `--strict` to make the command fail when the live Space is not on the expected SHA or when any probe check fails.
 
+### Pre-Submit One-Liner
+
+Run the full freeze-and-evidence workflow in one command. This runs the local preflight checks first, then captures the live Space evidence pack using the current commit SHA by default.
+
+```powershell
+$env:PYTHONPATH="envs;."
+$env:HF_SPACE_ID="sagar-grv/anything_you_want"
+$env:SPACE_BASE_URL="https://sagar-grv-anything-you-want.hf.space"
+$env:HF_TOKEN="<hf-token-with-space-read-access>"
+python .\scripts\submission_pipeline.py pre-submit --evidence-output .\submission-evidence.md
+```
+
+Pass `--expected-sha <sha>` if you want to freeze a specific commit instead of the current `git HEAD`.
+
 ### Evaluator-like Local Endpoint Probe
 
 To catch edge-case API issues before submission, run a local probe that mimics common evaluator checks (reset without body, task-by-task step scoring, strict score bounds, state transitions, invalid payload rejection, and deterministic output checks).

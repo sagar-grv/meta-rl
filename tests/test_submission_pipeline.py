@@ -1,4 +1,4 @@
-from scripts.submission_pipeline import analyze_dashboard_text, build_preflight_steps
+from scripts.submission_pipeline import analyze_dashboard_text, build_preflight_steps, build_pre_submit_steps
 
 
 def test_build_preflight_steps_in_expected_order():
@@ -6,6 +6,16 @@ def test_build_preflight_steps_in_expected_order():
 
     assert [step.name for step in steps] == ["pytest", "openenv_validate", "endpoint_probe", "inference_smoke"]
     assert steps[1].command[-1] == "validate"
+
+
+def test_build_pre_submit_steps_appends_submission_evidence():
+    steps = build_pre_submit_steps("https://example.hf.space", "owner/space", "abc123", "submission-evidence.md")
+
+    assert [step.name for step in steps] == ["pytest", "openenv_validate", "endpoint_probe", "inference_smoke", "submission_evidence"]
+    assert steps[-1].command[0].endswith("python.exe") or steps[-1].command[0].endswith("python")
+    assert "--strict" in steps[-1].command
+    assert "abc123" in steps[-1].command
+    assert "submission-evidence.md" in steps[-1].command
 
 
 def test_classify_score_range_failure():

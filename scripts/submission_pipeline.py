@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -42,6 +43,51 @@ def run_preflight(base_url: str) -> int:
             print(f"[PRECHECK-FAIL] {step.name} exited with {completed.returncode}")
             return completed.returncode
         print(f"[PRECHECK-OK] {step.name}")
+    return 0
+
+
+def get_current_git_sha() -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip()
+
+
+def build_pre_submit_steps(base_url: str, space_id: str, expected_sha: str, evidence_output: str) -> list[PipelineStep]:
+    python = sys.executable
+    return [
+        *build_preflight_steps(base_url),
+        PipelineStep(
+            "submission_evidence",
+            [
+                python,
+                str(ROOT / "scripts" / "submission_evidence.py"),
+                "--strict",
+                "--space-id",
+                space_id,
+                "--base-url",
+                base_url,
+                "--expected-sha",
+                expected_sha,
+                "--output",
+                evidence_output,
+            ],
+        ),
+    ]
+
+
+def run_pre_submit(base_url: str, space_id: str, expected_sha: str, evidence_output: str) -> int:
+    for step in build_pre_submit_steps(base_url, space_id, expected_sha, evidence_output):
+        print(f"[PRESUBMIT] {step.name}: {' '.join(step.command)}")
+        completed = subprocess.run(step.command, cwd=ROOT, check=False)
+        if completed.returncode != 0:
+            print(f"[PRESUBMIT-FAIL] {step.name} exited with {completed.returncode}")
+            return completed.returncode
+        print(f"[PRESUBMIT-OK] {step.name}")
     return 0
 
 
@@ -138,6 +184,12 @@ def main(argv: list[str] | None = None) -> int:
     preflight = subparsers.add_parser("preflight", help="Run local submission checks before pushing")
     preflight.add_argument("--base-url", default="http://127.0.0.1:7861", help="Local environment URL for the endpoint probe")
 
+    pre_submit = subparsers.add_parser("pre-submit", help="Run preflight then capture a frozen live evidence pack")
+    pre_submit.add_argument("--base-url", default=os.getenv("SPACE_BASE_URL", "https://sagar-grv-anything-you-want.hf.space"), help="Live Space base URL")
+    pre_submit.add_argument("--space-id", default=os.getenv("HF_SPACE_ID"), help="Hugging Face Space id, for example sagar-grv/anything_you_want")
+    pre_submit.add_argument("--expected-sha", default=None, help="Expected deployed commit SHA (defaults to current HEAD)")
+    pre_submit.add_argument("--evidence-output", default="submission-evidence.md", help="Markdown evidence output path")
+
     analyze = subparsers.add_parser("analyze-dashboard", help="Classify pasted dashboard text and suggest next actions")
     group = analyze.add_mutually_exclusive_group(required=True)
     group.add_argument("--input-file", help="Path to a text file containing dashboard output")
@@ -147,6 +199,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "preflight":
         return run_preflight(args.base_url)
+
+    if args.command == "pre-submit":
+        if not args.space_id:
+            raise SystemExit("--space-id or HF_SPACE_ID is required")
+        expected_sha = args.expected_sha or get_current_git_sha()
+        return run_pre_submit(args.base_url, args.space_id, expected_sha, args.evidence_output)
 
     if args.command == "analyze-dashboard":
         dashboard_text = load_dashboard_text(args.input_file, args.input_text)
