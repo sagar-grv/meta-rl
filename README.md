@@ -13,6 +13,13 @@ Support Queue OpenEnv is a deterministic customer support benchmark built for th
 
 The environment is designed to be simple to run, easy to validate, and useful for evaluating agent behavior on a realistic business workflow.
 
+## Validation Status
+
+- OpenEnv Round 1: **Validated** (Submission #41)
+- Validated tag: [openenv-round1-validated-20260411](https://github.com/sagar-grv/meta-rl/releases/tag/openenv-round1-validated-20260411)
+- Release notes: [docs/release-notes-2026-04-11.md](docs/release-notes-2026-04-11.md)
+- Future update guardrail: [docs/no-regression-checklist.md](docs/no-regression-checklist.md)
+
 ## Tasks
 
 The benchmark includes three graded tasks with increasing difficulty:
