@@ -36,7 +36,7 @@ def test_step_log_prevents_action_key_value_collision_with_reward_field():
         error=None,
     )
 
-    assert log_line == "[STEP] step=1 action=route=support; reply=great reward=1 done=true reward=0.97 done=true error=null"
+    assert log_line == "[STEP] step=1 action=route=support; reply=great reward:1 done:true reward=0.97 done=true error=null"
 
 
 def test_end_log_is_single_line_and_uses_two_decimal_rewards():

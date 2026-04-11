@@ -93,14 +93,20 @@ def _single_line(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _sanitize_log_value(text: str) -> str:
+    value = _single_line(text)
+    value = re.sub(r"(?i)\b(reward|score|done|steps)=", lambda match: f"{match.group(1)}:", value)
+    return value
+
+
 def build_start_log(*, task: str, env: str, model: str) -> str:
     safe_model = _single_line(model) or "configured"
     return f"[START] task={_single_line(task)} env={_single_line(env)} model={safe_model}"
 
 
 def build_step_log(*, step: int, action: str, reward: float, done: bool, error: str | None) -> str:
-    error_text = "null" if error is None else (_single_line(error) or "error")
-    action_text = _single_line(action) or "action"
+    error_text = "null" if error is None else (_sanitize_log_value(error) or "error")
+    action_text = _sanitize_log_value(action) or "action"
     return f"[STEP] step={step} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
 
 
