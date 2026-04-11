@@ -39,7 +39,7 @@ class SupportQueueEnvironment:
                 subject=self._task_spec.subject,
                 summary=self._task_spec.summary,
             ),
-            reward=SupportQueueReward(score=0.0),
+            reward=SupportQueueReward(score=0.01),
             done=False,
             info={"task_name": self._state.task_name},
         )
