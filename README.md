@@ -142,6 +142,21 @@ python .\scripts\judging_audit.py
 
 This command exits with a non-zero code if any audit gate fails.
 
+### Submission Evidence Pack
+
+Capture a frozen submission snapshot from the live Hugging Face Space before resubmitting. This records the repo SHA, Space runtime SHA/stage, live endpoint probe results, and optional run/build log snippets.
+
+```powershell
+$env:PYTHONPATH="envs;."
+$env:HF_SPACE_ID="sagar-grv/anything_you_want"
+$env:SPACE_BASE_URL="https://sagar-grv-anything-you-want.hf.space"
+$env:EXPECTED_SPACE_SHA="<commit-sha-to-freeze>"
+$env:HF_TOKEN="<hf-token-with-space-read-access>"
+python .\scripts\submission_evidence.py --strict --output .\submission-evidence.md
+```
+
+The command writes both `submission-evidence.md` and `submission-evidence.json`. Use `--strict` to make the command fail when the live Space is not on the expected SHA or when any probe check fails.
+
 ### Evaluator-like Local Endpoint Probe
 
 To catch edge-case API issues before submission, run a local probe that mimics common evaluator checks (reset without body, task-by-task step scoring, strict score bounds, state transitions, invalid payload rejection, and deterministic output checks).
