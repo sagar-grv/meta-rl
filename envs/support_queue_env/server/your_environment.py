@@ -69,6 +69,7 @@ class SupportQueueEnvironment:
         route_is_correct = route in {expected_route, "support"} if expected_route == "support" else route == expected_route
         reply_lower = action.reply.lower()
         reply_has_keyword = self._task_spec.success_keyword in reply_lower
+        keyword_occurrences = len(re.findall(rf"\b{re.escape(self._task_spec.success_keyword)}\b", reply_lower))
 
         reply_tokens = re.findall(r"[a-zA-Z]{3,}", reply_lower)
         reply_words = set(reply_tokens)
@@ -88,6 +89,7 @@ class SupportQueueEnvironment:
         high_token_volume = token_count >= 10
         stuffing_density = stuffing_count / max(token_count, 1)
         moderate_low_relevance = relevance_ratio < 0.15
+        apology_template = reply_lower.startswith("sorry") or reply_lower.startswith("apologies")
 
         if reply_has_keyword and route_is_correct:
             keyword_credit = 0.22 if token_count >= 4 else 0.06
@@ -116,6 +118,9 @@ class SupportQueueEnvironment:
         high_repetition_penalty = 0.09 if repetition_ratio >= 0.62 and token_count >= 8 else 0.0
         template_route_penalty = 0.05 if route_is_correct and moderate_low_relevance and token_count >= 4 else 0.0
         short_keyword_only_penalty = 0.05 if reply_has_keyword and token_count <= 4 and relevance_ratio < 0.20 else 0.0
+        keyword_spam_penalty = 0.07 if keyword_occurrences >= 3 and relevance_ratio < 0.30 else 0.0
+        mixed_intent_penalty = 0.08 if stuffing_count >= 5 and repetition_ratio >= 0.50 else 0.0
+        apology_template_penalty = 0.06 if apology_template and token_count <= 7 and relevance_ratio < 0.20 else 0.0
 
         # Keep task score strictly inside (0, 1) and discourage shortcut strategies.
         reward_value = 0.08 + (0.55 if route_is_correct else 0.0) + keyword_credit + quality_credit
@@ -133,6 +138,9 @@ class SupportQueueEnvironment:
             + high_repetition_penalty
             + template_route_penalty
             + short_keyword_only_penalty
+            + keyword_spam_penalty
+            + mixed_intent_penalty
+            + apology_template_penalty
         )
         reward_value = clamp_open_score(min(reward_value, 0.89))
         self._state = self._state.model_copy(update={"episode_done": True})
