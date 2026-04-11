@@ -13,7 +13,7 @@ COPY envs /app/envs
 COPY tests /app/tests
 
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir fastapi uvicorn pydantic openai pytest
+    pip install --no-cache-dir openenv-core fastapi uvicorn pydantic openai pytest
 
 EXPOSE 7860
 
