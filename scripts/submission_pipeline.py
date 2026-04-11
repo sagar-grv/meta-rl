@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import os
 import subprocess
 import sys
@@ -57,6 +58,13 @@ def get_current_git_sha() -> str:
     return completed.stdout.strip()
 
 
+def build_submission_artifacts_dir(root_dir: str, expected_sha: str, timestamp: dt.datetime | None = None) -> Path:
+    moment = timestamp or dt.datetime.now(dt.timezone.utc)
+    stamp = moment.strftime("%Y%m%d-%H%M%SZ")
+    short_sha = expected_sha[:8] if expected_sha else "unknown"
+    return Path(root_dir) / f"{stamp}-{short_sha}"
+
+
 def build_pre_submit_steps(base_url: str, space_id: str, expected_sha: str, evidence_output: str) -> list[PipelineStep]:
     python = sys.executable
     return [
@@ -89,6 +97,15 @@ def run_pre_submit(base_url: str, space_id: str, expected_sha: str, evidence_out
             return completed.returncode
         print(f"[PRESUBMIT-OK] {step.name}")
     return 0
+
+
+def resolve_pre_submit_outputs(expected_sha: str, save_artifacts_dir: str | None, evidence_output: str) -> tuple[str, str | None]:
+    if not save_artifacts_dir:
+        return evidence_output, None
+
+    artifact_dir = build_submission_artifacts_dir(save_artifacts_dir, expected_sha)
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    return str(artifact_dir / "submission-evidence.md"), str(artifact_dir)
 
 
 def _match_category(text: str) -> DashboardFinding:
@@ -189,6 +206,7 @@ def main(argv: list[str] | None = None) -> int:
     pre_submit.add_argument("--space-id", default=os.getenv("HF_SPACE_ID"), help="Hugging Face Space id, for example sagar-grv/anything_you_want")
     pre_submit.add_argument("--expected-sha", default=None, help="Expected deployed commit SHA (defaults to current HEAD)")
     pre_submit.add_argument("--evidence-output", default="submission-evidence.md", help="Markdown evidence output path")
+    pre_submit.add_argument("--save-artifacts-dir", default=None, help="Optional root folder where a timestamped submission artifact directory will be created")
 
     analyze = subparsers.add_parser("analyze-dashboard", help="Classify pasted dashboard text and suggest next actions")
     group = analyze.add_mutually_exclusive_group(required=True)
@@ -204,7 +222,11 @@ def main(argv: list[str] | None = None) -> int:
         if not args.space_id:
             raise SystemExit("--space-id or HF_SPACE_ID is required")
         expected_sha = args.expected_sha or get_current_git_sha()
-        return run_pre_submit(args.base_url, args.space_id, expected_sha, args.evidence_output)
+        evidence_output, artifact_dir = resolve_pre_submit_outputs(expected_sha, args.save_artifacts_dir, args.evidence_output)
+        exit_code = run_pre_submit(args.base_url, args.space_id, expected_sha, evidence_output)
+        if exit_code == 0 and artifact_dir:
+            print(f"[PRESUBMIT-OK] artifacts saved in {artifact_dir}")
+        return exit_code
 
     if args.command == "analyze-dashboard":
         dashboard_text = load_dashboard_text(args.input_file, args.input_text)

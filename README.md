@@ -171,6 +171,8 @@ python .\scripts\submission_pipeline.py pre-submit --evidence-output .\submissio
 
 Pass `--expected-sha <sha>` if you want to freeze a specific commit instead of the current `git HEAD`.
 
+To keep each submission cycle isolated, add `--save-artifacts-dir .\submission-artifacts`. The command will create a timestamped folder inside that root and place the evidence pack there automatically.
+
 ### Evaluator-like Local Endpoint Probe
 
 To catch edge-case API issues before submission, run a local probe that mimics common evaluator checks (reset without body, task-by-task step scoring, strict score bounds, state transitions, invalid payload rejection, and deterministic output checks).

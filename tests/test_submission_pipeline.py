@@ -1,4 +1,13 @@
-from scripts.submission_pipeline import analyze_dashboard_text, build_preflight_steps, build_pre_submit_steps
+import datetime as dt
+from pathlib import Path
+
+from scripts.submission_pipeline import (
+    analyze_dashboard_text,
+    build_preflight_steps,
+    build_pre_submit_steps,
+    build_submission_artifacts_dir,
+    resolve_pre_submit_outputs,
+)
 
 
 def test_build_preflight_steps_in_expected_order():
@@ -16,6 +25,25 @@ def test_build_pre_submit_steps_appends_submission_evidence():
     assert "--strict" in steps[-1].command
     assert "abc123" in steps[-1].command
     assert "submission-evidence.md" in steps[-1].command
+
+
+def test_build_submission_artifacts_dir_uses_timestamp_and_short_sha():
+    timestamp = dt.datetime(2026, 4, 11, 12, 34, 56, tzinfo=dt.timezone.utc)
+    path = build_submission_artifacts_dir("artifacts", "abcdef123456", timestamp=timestamp)
+
+    assert str(path).endswith("20260411-123456Z-abcdef12")
+
+
+def test_resolve_pre_submit_outputs_uses_timestamped_artifacts_dir(tmp_path):
+    evidence_output, artifact_dir = resolve_pre_submit_outputs(
+        "abcdef123456",
+        str(tmp_path),
+        "submission-evidence.md",
+    )
+
+    assert artifact_dir is not None
+    assert evidence_output.endswith("submission-evidence.md")
+    assert Path(artifact_dir).exists()
 
 
 def test_classify_score_range_failure():
