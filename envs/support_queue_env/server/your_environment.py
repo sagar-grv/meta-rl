@@ -103,11 +103,12 @@ class SupportQueueEnvironment:
         sparse_penalty = 0.24 if sparse_reply else 0.0
         overlong_penalty = 0.18 if overlong_reply else 0.0
         stuffing_penalty = 0.28 if stuffing_count >= 4 else 0.0
+        exploit_penalty = 0.12 if stuffing_count >= 6 else (0.05 if stuffing_count >= 4 and relevance_ratio < 0.30 else 0.0)
         repetition_penalty = 0.14 if repetition_ratio >= 0.45 else 0.0
 
         # Keep task score strictly inside (0, 1) and discourage shortcut strategies.
         reward_value = 0.08 + (0.55 if route_is_correct else 0.0) + keyword_credit + quality_credit
-        reward_value -= generic_penalty + sparse_penalty + overlong_penalty + stuffing_penalty + repetition_penalty
+        reward_value -= generic_penalty + sparse_penalty + overlong_penalty + stuffing_penalty + exploit_penalty + repetition_penalty
         reward_value = clamp_open_score(min(reward_value, 0.89))
         self._state = self._state.model_copy(update={"episode_done": True})
         return StepResult(
