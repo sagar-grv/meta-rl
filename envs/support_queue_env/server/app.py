@@ -27,6 +27,11 @@ app = create_app(
 )
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 def main() -> None:
     import uvicorn
 
