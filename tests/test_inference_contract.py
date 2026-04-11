@@ -24,8 +24,21 @@ def test_step_log_sanitizes_multiline_fields():
     )
 
     assert "\n" not in log_line
-    assert "reply=line1 line2" in log_line
+    assert "reply:line1 line2" in log_line
     assert "error=bad request" in log_line
+
+
+def test_step_log_prevents_action_key_value_collision_with_reward_field():
+    log_line = build_step_log(
+        step=1,
+        action="route=support; reply=great reward=1 done=true",
+        reward=0.97,
+        done=True,
+        error=None,
+    )
+
+    assert "action=route:support; reply:great reward:1 done:true" in log_line
+    assert " reward=0.97 done=true error=null" in log_line
 
 
 def test_end_log_is_single_line_and_uses_two_decimal_rewards():

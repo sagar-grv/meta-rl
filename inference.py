@@ -95,7 +95,8 @@ def build_start_log(*, task: str, env: str, model: str) -> str:
 
 def build_step_log(*, step: int, action: str, reward: float, done: bool, error: str | None) -> str:
     error_text = "null" if error is None else _single_line(error)
-    action_text = _single_line(action)
+    # Avoid parser collisions by ensuring action text cannot introduce key=value fields.
+    action_text = _single_line(action).replace("=", ":")
     return f"[STEP] step={step} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
 
 
