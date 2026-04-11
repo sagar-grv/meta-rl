@@ -24,8 +24,8 @@ def test_step_log_sanitizes_multiline_fields():
     )
 
     assert "\n" not in log_line
-    assert "reply:line1 line2" in log_line
-    assert "error=bad request" in log_line
+    assert "action=redacted" in log_line
+    assert "error=badrequest" in log_line
 
 
 def test_step_log_prevents_action_key_value_collision_with_reward_field():
@@ -37,7 +37,7 @@ def test_step_log_prevents_action_key_value_collision_with_reward_field():
         error=None,
     )
 
-    assert "action=route:support; reply:great reward:1 done:true" in log_line
+    assert "action=redacted" in log_line
     assert " reward=0.97 done=true error=null" in log_line
 
 
