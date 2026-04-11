@@ -84,6 +84,9 @@ class SupportQueueEnvironment:
         generic_reply = token_count < 4 or reply_lower.strip() in {"", "i can help.", "please help", "i can help"}
         sparse_reply = token_count <= 2
         overlong_reply = len(action.reply) > 400 or len(reply_words) > 120
+        very_low_relevance = relevance_ratio < 0.08
+        high_token_volume = token_count >= 10
+        stuffing_density = stuffing_count / max(token_count, 1)
 
         if reply_has_keyword and route_is_correct:
             keyword_credit = 0.22 if token_count >= 4 else 0.06
@@ -105,6 +108,9 @@ class SupportQueueEnvironment:
         stuffing_penalty = 0.32 if stuffing_count >= 4 else 0.0
         exploit_penalty = 0.14 if stuffing_count >= 6 else (0.06 if stuffing_count >= 4 and relevance_ratio < 0.30 else 0.0)
         low_relevance_verbosity_penalty = 0.10 if token_count >= 12 and relevance_ratio < 0.12 else 0.0
+        off_topic_verbosity_penalty = 0.07 if high_token_volume and very_low_relevance else 0.0
+        keyword_route_mismatch_penalty = 0.06 if reply_has_keyword and not route_is_correct and token_count >= 4 else 0.0
+        stuffing_density_penalty = 0.08 if stuffing_count >= 4 and stuffing_density >= 0.20 else 0.0
         repetition_penalty = 0.14 if repetition_ratio >= 0.45 else 0.0
 
         # Keep task score strictly inside (0, 1) and discourage shortcut strategies.
@@ -116,6 +122,9 @@ class SupportQueueEnvironment:
             + stuffing_penalty
             + exploit_penalty
             + low_relevance_verbosity_penalty
+            + off_topic_verbosity_penalty
+            + keyword_route_mismatch_penalty
+            + stuffing_density_penalty
             + repetition_penalty
         )
         reward_value = clamp_open_score(min(reward_value, 0.89))
