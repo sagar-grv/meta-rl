@@ -1,7 +1,7 @@
 import pytest
 
 from support_queue_env.server.your_environment import SupportQueueEnvironment
-from support_queue_env.models import SupportQueueAction
+from support_queue_env.models import SupportQueueAction, SupportQueueReward
 
 
 def test_reset_returns_initial_observation_and_state():
@@ -143,3 +143,13 @@ def test_contextual_success_score_is_high_but_not_saturated():
 
     # Keep strong responses high while preserving gradient for judge-round robustness.
     assert 0.75 <= strong.reward.score <= 0.97
+
+
+def test_reward_model_clamps_boundary_scores_into_open_interval():
+    low = SupportQueueReward(score=0.0)
+    high = SupportQueueReward(score=1.0)
+
+    assert 0.0 < low.score < 1.0
+    assert 0.0 < high.score < 1.0
+    assert low.score == pytest.approx(0.01)
+    assert high.score == pytest.approx(0.99)

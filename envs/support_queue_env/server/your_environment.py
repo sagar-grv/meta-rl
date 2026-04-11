@@ -8,6 +8,7 @@ from support_queue_env.models import (
     SupportQueueReward,
     SupportQueueState,
     StepResult,
+    clamp_open_score,
 )
 from support_queue_env.tasks import get_task_spec
 
@@ -90,7 +91,7 @@ class SupportQueueEnvironment:
         # Keep task score strictly inside (0, 1) and discourage shortcut strategies.
         reward_value = 0.08 + (0.55 if route_is_correct else 0.0) + keyword_credit + quality_credit
         reward_value -= generic_penalty + sparse_penalty + overlong_penalty + stuffing_penalty + repetition_penalty
-        reward_value = min(max(reward_value, 0.01), 0.97)
+        reward_value = clamp_open_score(min(reward_value, 0.97))
         self._state = self._state.model_copy(update={"episode_done": True})
         return StepResult(
             observation=SupportQueueObservation(

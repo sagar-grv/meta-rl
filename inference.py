@@ -7,7 +7,7 @@ from typing import Iterable
 
 from openai import OpenAI
 
-from support_queue_env.models import SupportQueueAction
+from support_queue_env.models import SupportQueueAction, clamp_open_score
 from support_queue_env.server.your_environment import SupportQueueEnvironment
 from support_queue_env.tasks import TASK_SPECS, TaskSpec
 
@@ -105,7 +105,7 @@ def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str
 
 
 def _ensure_open_interval(score: float) -> float:
-    return min(max(score, 0.01), 0.99)
+    return clamp_open_score(score)
 
 
 def parse_model_action(text: str) -> SupportQueueAction:
