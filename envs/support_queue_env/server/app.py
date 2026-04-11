@@ -5,7 +5,7 @@ import os
 try:
     from openenv.core.env_server.http_server import create_app
 except Exception:  # pragma: no cover
-    from openenv.core.env_server import create_app
+    from openenv_core.env_server.http_server import create_app
 
 from support_queue_env.models import SupportQueueAction, SupportQueueObservation
 from support_queue_env.server.your_environment import SupportQueueEnvironment
