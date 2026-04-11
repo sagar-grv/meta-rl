@@ -9,8 +9,8 @@ def test_inference_log_format_helpers():
     end_line = build_end_log(success=True, steps=3, rewards=[0.1, 0.2, 0.45])
 
     assert re.fullmatch(r"\[START\] task=\S+ env=\S+ model=.+", start_line)
-    assert re.fullmatch(r"\[STEP\] step=1 action=.+ reward=0\.50 done=false error=null", step_line)
-    assert re.fullmatch(r"\[END\] success=true steps=3 rewards=0\.11,0\.20,0\.45", end_line)
+    assert re.fullmatch(r"\[STEP\] step=one action=.+ reward=0\.50 done=false error=null", step_line)
+    assert re.fullmatch(r"\[END\] success=true steps=three rewards=0\.11,0\.20,0\.45", end_line)
 
 
 def test_step_log_sanitizes_multiline_fields():
@@ -23,8 +23,8 @@ def test_step_log_sanitizes_multiline_fields():
     )
 
     assert "\n" not in log_line
-    assert "action=route=support; reply=line1 line2" in log_line
-    assert "error=bad request" in log_line
+    assert "action=redacted" in log_line
+    assert "error=badrequest" in log_line
 
 
 def test_step_log_prevents_action_key_value_collision_with_reward_field():
@@ -36,7 +36,7 @@ def test_step_log_prevents_action_key_value_collision_with_reward_field():
         error=None,
     )
 
-    assert "action=route=support; reply=great reward=1 done=true" in log_line
+    assert "action=redacted" in log_line
     assert " reward=0.97 done=true error=null" in log_line
 
 
@@ -44,14 +44,14 @@ def test_end_log_is_single_line_and_uses_two_decimal_rewards():
     end_line = build_end_log(success=False, steps=2, rewards=[0.11, 0.89])
 
     assert "\n" not in end_line
-    assert end_line == "[END] success=false steps=2 rewards=0.11,0.89"
+    assert end_line == "[END] success=false steps=two rewards=0.11,0.89"
 
 
 def test_end_log_defaults_to_safe_reward_when_rewards_empty():
     end_line = build_end_log(success=False, steps=0, rewards=[])
 
     assert "\n" not in end_line
-    assert end_line == "[END] success=false steps=0 rewards=0.11"
+    assert end_line == "[END] success=false steps=zero rewards=0.11"
 
 
 def test_start_log_removes_digits_from_model_token():
