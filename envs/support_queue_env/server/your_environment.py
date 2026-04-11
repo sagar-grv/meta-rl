@@ -102,8 +102,8 @@ class SupportQueueEnvironment:
         generic_penalty = 0.16 if generic_reply else 0.0
         sparse_penalty = 0.24 if sparse_reply else 0.0
         overlong_penalty = 0.18 if overlong_reply else 0.0
-        stuffing_penalty = 0.28 if stuffing_count >= 4 else 0.0
-        exploit_penalty = 0.12 if stuffing_count >= 6 else (0.05 if stuffing_count >= 4 and relevance_ratio < 0.30 else 0.0)
+        stuffing_penalty = 0.32 if stuffing_count >= 4 else 0.0
+        exploit_penalty = 0.14 if stuffing_count >= 6 else (0.06 if stuffing_count >= 4 and relevance_ratio < 0.30 else 0.0)
         low_relevance_verbosity_penalty = 0.10 if token_count >= 12 and relevance_ratio < 0.12 else 0.0
         repetition_penalty = 0.14 if repetition_ratio >= 0.45 else 0.0
 
