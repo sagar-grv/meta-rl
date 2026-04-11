@@ -18,7 +18,7 @@ class AuditCheck:
 def _score_once(task_name: str, route: str, reply: str) -> float:
     env = SupportQueueEnvironment(seed=7, task_name=task_name)
     env.reset()
-    return env.step(SupportQueueAction(route=route, reply=reply)).reward.score
+    return float(env.step(SupportQueueAction(route=route, reply=reply)).reward)
 
 
 def _policy_scores() -> dict[str, list[float]]:
@@ -70,7 +70,7 @@ def run_judging_audit() -> list[AuditCheck]:
                 bool(reset_result.observation.ticket_id)
                 and isinstance(step_result.done, bool)
                 and isinstance(step_result.info, dict)
-                and 0.0 < step_result.reward.score < 1.0
+                and 0.0 < float(step_result.reward) < 1.0
             ),
             detail="reset/step types valid and score strictly inside (0,1)",
         )
