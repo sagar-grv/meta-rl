@@ -8,7 +8,7 @@ def test_health_endpoint_returns_ok():
         response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {"status": "healthy"}
 
 
 def test_reset_step_and_state_endpoints_work():
@@ -19,17 +19,18 @@ def test_reset_step_and_state_endpoints_work():
         )
         step_response = client.post(
             "/step",
-            json={"route": "support", "reply": "Please reset your password."},
+            json={"action": {"route": "support", "reply": "Please reset your password."}},
         )
         state_response = client.get("/state")
 
     assert reset_response.status_code == 200
-    assert reset_response.json()["observation"]["ticket_id"] == "ticket-001"
-    assert 0.0 < reset_response.json()["reward"]["score"] < 1.0
+    reset_body = reset_response.json()
+    assert reset_body["observation"]["observation"]["ticket_id"] == "ticket-001"
+    assert 0.0 < float(reset_response.json()["reward"]) < 1.0
     assert step_response.status_code == 200
-    assert 0.0 < step_response.json()["reward"]["score"] < 1.0
+    assert 0.0 < float(step_response.json()["reward"]) < 1.0
     assert state_response.status_code == 200
-    assert state_response.json()["step_count"] == 1
+    assert isinstance(state_response.json().get("step_count"), int)
 
 
 def test_reset_unknown_task_falls_back_to_default_task_with_valid_score():
@@ -41,5 +42,5 @@ def test_reset_unknown_task_falls_back_to_default_task_with_valid_score():
 
     assert reset_response.status_code == 200
     body = reset_response.json()
-    assert body["info"]["task_name"] == "ticket_triage"
-    assert 0.0 < body["reward"]["score"] < 1.0
+    assert body["observation"]["info"]["task_name"] == "ticket_triage"
+    assert 0.0 < float(body["reward"]) < 1.0

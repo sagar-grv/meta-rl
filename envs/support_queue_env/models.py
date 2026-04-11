@@ -58,6 +58,11 @@ class TaskSpec(BaseModel):
 
 class StepResult(BaseModel):
     observation: SupportQueueObservation
-    reward: SupportQueueReward
+    reward: float = Field(gt=0.0, lt=1.0)
     done: bool
     info: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("reward", mode="before")
+    @classmethod
+    def _sanitize_reward(cls, value: float) -> float:
+        return clamp_open_score(value)

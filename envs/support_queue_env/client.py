@@ -15,4 +15,4 @@ class SupportQueueClient:
         return self._environment.step(action)
 
     def state(self):
-        return self._environment.state()
+        return self._environment.state

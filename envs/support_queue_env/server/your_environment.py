@@ -5,7 +5,6 @@ import re
 from support_queue_env.models import (
     SupportQueueAction,
     SupportQueueObservation,
-    SupportQueueReward,
     SupportQueueState,
     StepResult,
     clamp_open_score,
@@ -24,8 +23,19 @@ class SupportQueueEnvironment:
             current_ticket_id=self._task_spec.ticket_id,
             task_name=self._task_spec.name,
         )
+        self.state = self._state
 
-    def reset(self) -> StepResult:
+    def reset(self, *args: object, task_name: str | None = None, seed: int | None = None, **_: object) -> StepResult:
+        if args and isinstance(args[0], dict):
+            payload = args[0]
+            task_name = payload.get("task_name", task_name)
+            seed = payload.get("seed", seed)
+
+        if task_name is not None:
+            self.task_name = task_name
+        if seed is not None:
+            self.seed = seed
+
         self._task_spec = resolve_task_spec(self.task_name)
         self.task_name = self._task_spec.name
         self._state = SupportQueueState(
@@ -34,6 +44,7 @@ class SupportQueueEnvironment:
             current_ticket_id=self._task_spec.ticket_id,
             task_name=self._task_spec.name,
         )
+        self.state = self._state
         return StepResult(
             observation=SupportQueueObservation(
                 ticket_id=self._task_spec.ticket_id,
@@ -41,12 +52,15 @@ class SupportQueueEnvironment:
                 subject=self._task_spec.subject,
                 summary=self._task_spec.summary,
             ),
-            reward=SupportQueueReward(score=0.01),
+            reward=0.01,
             done=False,
             info={"task_name": self._state.task_name},
         )
 
-    def step(self, action: SupportQueueAction) -> StepResult:
+    def step(self, action: SupportQueueAction | dict[str, str]) -> StepResult:
+        if isinstance(action, dict):
+            action = SupportQueueAction(**action)
+
         self._state = self._state.model_copy(update={"step_count": self._state.step_count + 1})
         route = action.route.strip().lower()
         expected_route = self._task_spec.expected_route
@@ -94,6 +108,7 @@ class SupportQueueEnvironment:
         reward_value -= generic_penalty + sparse_penalty + overlong_penalty + stuffing_penalty + repetition_penalty
         reward_value = clamp_open_score(min(reward_value, 0.97))
         self._state = self._state.model_copy(update={"episode_done": True})
+        self.state = self._state
         return StepResult(
             observation=SupportQueueObservation(
                 ticket_id=self._state.current_ticket_id,
@@ -101,7 +116,7 @@ class SupportQueueEnvironment:
                 subject=self._task_spec.subject,
                 summary=self._task_spec.summary,
             ),
-            reward=SupportQueueReward(score=reward_value),
+            reward=reward_value,
             done=True,
             info={
                 "route": action.route,
@@ -111,5 +126,17 @@ class SupportQueueEnvironment:
             },
         )
 
-    def state(self) -> SupportQueueState:
+    async def reset_async(self, *args: object, task_name: str | None = None, seed: int | None = None, **kwargs: object) -> StepResult:
+        return self.reset(*args, task_name=task_name, seed=seed, **kwargs)
+
+    async def step_async(self, action: SupportQueueAction | dict[str, str]) -> StepResult:
+        return self.step(action)
+
+    async def state_async(self) -> SupportQueueState:
         return self._state
+
+    async def close_async(self) -> None:
+        return None
+
+    def close(self) -> None:
+        return None

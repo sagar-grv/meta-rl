@@ -146,7 +146,7 @@ def test_keyword_stuffing_policy_underperforms_contextual_policy():
     def score(task_name: str, route: str, reply: str) -> float:
         env = SupportQueueEnvironment(seed=7, task_name=task_name)
         env.reset()
-        return env.step(SupportQueueAction(route=route, reply=reply)).reward.score
+        return float(env.step(SupportQueueAction(route=route, reply=reply)).reward)
 
     stuffed_scores = [
         score("ticket_triage", "support", "login refund escalate policy billing handoff dispute account password customer request issue"),

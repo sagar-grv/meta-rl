@@ -250,7 +250,7 @@ def run_support_queue_baseline(
             result = env.reset()
             history: list[str] = []
             last_echoed = result.observation.summary
-            last_reward = result.reward.score
+            last_reward = float(result.reward)
 
             for step in range(1, 4):
                 if result.done:
@@ -302,7 +302,7 @@ def run_support_queue_baseline(
 
                 result = env.step(action)
 
-                reward = _ensure_open_interval(result.reward.score)
+                reward = _ensure_open_interval(float(result.reward))
                 done = result.done
 
                 rewards.append(reward)

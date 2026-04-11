@@ -11,9 +11,9 @@ def test_reset_returns_initial_observation_and_state():
 
     assert result.observation.ticket_id == "ticket-001"
     assert result.observation.status == "open"
-    assert 0.0 < result.reward.score < 1.0
-    assert env.state().step_count == 0
-    assert env.state().episode_done is False
+    assert 0.0 < result.reward < 1.0
+    assert env.state.step_count == 0
+    assert env.state.episode_done is False
 
 
 def test_step_returns_observation_reward_done_and_info():
@@ -23,7 +23,7 @@ def test_step_returns_observation_reward_done_and_info():
     result = env.step(SupportQueueAction(route="support", reply="We are looking into this."))
 
     assert result.observation.ticket_id == "ticket-001"
-    assert 0.0 < result.reward.score < 1.0
+    assert 0.0 < result.reward < 1.0
     assert isinstance(result.done, bool)
     assert isinstance(result.info, dict)
 
@@ -34,7 +34,7 @@ def test_state_advances_after_step():
 
     env.step(SupportQueueAction(route="support", reply="We are looking into this."))
 
-    assert env.state().step_count == 1
+    assert env.state.step_count == 1
 
 
 def test_keyword_stuffing_is_penalized_for_escalation_task():
@@ -56,8 +56,8 @@ def test_keyword_stuffing_is_penalized_for_escalation_task():
         )
     )
 
-    assert stuffed.reward.score <= 0.30
-    assert stuffed.reward.score < targeted.reward.score
+    assert stuffed.reward <= 0.30
+    assert stuffed.reward < targeted.reward
 
 
 def test_overlong_irrelevant_reply_is_penalized():
@@ -71,7 +71,7 @@ def test_overlong_irrelevant_reply_is_penalized():
     env.reset()
     concise_result = env.step(SupportQueueAction(route="support", reply="I can help resolve your login issue."))
 
-    assert long_result.reward.score < concise_result.reward.score
+    assert long_result.reward < concise_result.reward
 
 
 def test_repetitive_reply_is_penalized_against_contextual_reply():
@@ -93,7 +93,7 @@ def test_repetitive_reply_is_penalized_against_contextual_reply():
         )
     )
 
-    assert repetitive.reward.score < contextual.reward.score
+    assert repetitive.reward < contextual.reward
 
 
 def test_offtopic_keyword_only_reply_is_penalized_for_login_task():
@@ -115,7 +115,7 @@ def test_offtopic_keyword_only_reply_is_penalized_for_login_task():
         )
     )
 
-    assert offtopic.reward.score < contextual.reward.score
+    assert offtopic.reward < contextual.reward
 
 
 def test_keyword_only_reply_does_not_receive_high_score():
@@ -128,7 +128,7 @@ def test_keyword_only_reply_does_not_receive_high_score():
         )
     )
 
-    assert shortcut.reward.score <= 0.45
+    assert shortcut.reward <= 0.45
 
 
 def test_contextual_success_score_is_high_but_not_saturated():
@@ -142,7 +142,7 @@ def test_contextual_success_score_is_high_but_not_saturated():
     )
 
     # Keep strong responses high while preserving gradient for judge-round robustness.
-    assert 0.75 <= strong.reward.score <= 0.97
+    assert 0.75 <= strong.reward <= 0.97
 
 
 def test_reward_model_clamps_boundary_scores_into_open_interval():

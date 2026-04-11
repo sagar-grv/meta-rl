@@ -1,46 +1,34 @@
 from __future__ import annotations
 
-from fastapi import Body, FastAPI
-from pydantic import BaseModel
+import os
 
-from support_queue_env.models import SupportQueueAction
+try:
+    from openenv.core.env_server.http_server import create_app
+except Exception:  # pragma: no cover
+    from openenv.core.env_server import create_app
+
+from support_queue_env.models import SupportQueueAction, SupportQueueObservation
 from support_queue_env.server.your_environment import SupportQueueEnvironment
 
-app = FastAPI(title="Support Queue OpenEnv")
-environment = SupportQueueEnvironment()
+
+def create_environment() -> SupportQueueEnvironment:
+    return SupportQueueEnvironment()
 
 
-class ResetRequest(BaseModel):
-    task_name: str = "ticket_triage"
-    seed: int | None = None
+app = create_app(
+    create_environment,
+    SupportQueueAction,
+    SupportQueueObservation,
+    env_name="support_queue_env",
+    max_concurrent_envs=1,
+)
 
 
-@app.get("/")
-def root() -> dict[str, str]:
-    return {"status": "ok"}
+def main() -> None:
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("API_PORT", "7860")))
 
 
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@app.post("/reset")
-def reset(request: ResetRequest | None = Body(default=None)) -> dict[str, object]:
-    global environment
-    task_name = request.task_name if request is not None else "ticket_triage"
-    seed = request.seed if request is not None else None
-    environment = SupportQueueEnvironment(seed=seed, task_name=task_name)
-    result = environment.reset()
-    return result.model_dump()
-
-
-@app.post("/step")
-def step(action: SupportQueueAction) -> dict[str, object]:
-    result = environment.step(action)
-    return result.model_dump()
-
-
-@app.get("/state")
-def state() -> dict[str, object]:
-    return environment.state().model_dump()
+if __name__ == "__main__":
+    main()

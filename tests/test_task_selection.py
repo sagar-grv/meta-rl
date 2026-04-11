@@ -8,8 +8,8 @@ def test_reset_uses_requested_task_name():
     result = env.reset()
 
     assert result.info["task_name"] == "reply_drafting"
-    assert 0.0 < result.reward.score < 1.0
-    assert env.state().task_name == "reply_drafting"
+    assert 0.0 < result.reward < 1.0
+    assert env.state.task_name == "reply_drafting"
 
 
 def test_step_reports_task_specific_route_error():
@@ -18,7 +18,7 @@ def test_step_reports_task_specific_route_error():
 
     result = env.step(SupportQueueAction(route="triage", reply="Please escalate this ticket."))
 
-    assert result.reward.score < 1.0
+    assert result.reward < 1.0
     assert result.info["task_name"] == "escalation_resolution"
     assert result.info["route"] == "triage"
 
@@ -29,5 +29,5 @@ def test_unknown_task_name_falls_back_to_default_task():
     result = env.reset()
 
     assert result.info["task_name"] == "ticket_triage"
-    assert env.state().task_name == "ticket_triage"
-    assert 0.0 < result.reward.score < 1.0
+    assert env.state.task_name == "ticket_triage"
+    assert 0.0 < result.reward < 1.0

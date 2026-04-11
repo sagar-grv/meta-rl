@@ -1,3 +1,6 @@
+spec_version: 1
 name: support_queue_env
-version: 0.1.0
-description: Customer support queue OpenEnv environment
+type: space
+runtime: fastapi
+app: server.app:app
+port: 7860
