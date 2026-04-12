@@ -3,6 +3,14 @@ from fastapi.testclient import TestClient
 from support_queue_env.server.app import app
 
 
+def test_ui_route_returns_tester_page():
+    with TestClient(app) as client:
+        response = client.get("/ui/")
+
+    assert response.status_code == 200
+    assert "Support Queue Agent Tester" in response.text
+
+
 def test_health_endpoint_returns_ok():
     with TestClient(app) as client:
         response = client.get("/health")

@@ -9,6 +9,7 @@ ENV PYTHONUNBUFFERED=1 \
 COPY pyproject.toml /app/pyproject.toml
 COPY README.md /app/README.md
 COPY inference.py /app/inference.py
+COPY web /app/web
 COPY envs /app/envs
 COPY tests /app/tests
 

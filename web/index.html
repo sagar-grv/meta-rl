@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Support Queue Agent Tester</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #1c2333;
+      --muted: #5f6c85;
+      --line: #d5dbea;
+      --brand: #0f62fe;
+      --ok: #0f8a4b;
+      --bad: #c62828;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f5f7fb 0%, #edf2fb 100%);
+      color: var(--ink);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(28, 35, 51, 0.05);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .sub {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: var(--muted);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 14px;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 13px;
+      border: 1px solid var(--line);
+      background: #f9fbff;
+    }
+
+    .metric {
+      font-weight: 600;
+    }
+
+    .ok { color: var(--ok); }
+    .bad { color: var(--bad); }
+
+    pre {
+      margin: 8px 0 0;
+      padding: 10px;
+      background: #0f1727;
+      color: #dce5ff;
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 260px;
+      font-size: 12px;
+    }
+
+    .log {
+      max-height: 520px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fbfcff;
+    }
+
+    .entry {
+      border-bottom: 1px dashed var(--line);
+      padding: 8px 0;
+    }
+
+    .entry:last-child {
+      border-bottom: none;
+    }
+
+    .entry-head {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 900px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <h1>Support Queue Agent Tester</h1>
+      <p class="sub">Manual UI for testing <code>/reset</code>, <code>/step</code>, and <code>/state</code> on the current backend.</p>
+
+      <div class="grid">
+        <div>
+          <label for="baseUrl">Base URL</label>
+          <input id="baseUrl" value="" placeholder="same-origin">
+        </div>
+        <div>
+          <label for="taskName">Task</label>
+          <select id="taskName">
+            <option value="ticket_triage">ticket_triage</option>
+            <option value="reply_drafting">reply_drafting</option>
+            <option value="escalation_resolution">escalation_resolution</option>
+          </select>
+        </div>
+        <div>
+          <label for="seed">Seed</label>
+          <input id="seed" type="number" value="7">
+        </div>
+        <div>
+          <label for="route">Route</label>
+          <select id="route">
+            <option value="support">support</option>
+            <option value="escalate">escalate</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label for="reply">Reply</label>
+        <textarea id="reply">I can help resolve your login issue and guide account recovery steps.</textarea>
+      </div>
+
+      <div class="actions">
+        <button id="resetBtn" class="primary">Reset</button>
+        <button id="stepBtn">Step</button>
+        <button id="stateBtn">State</button>
+        <button id="clearBtn">Clear Log</button>
+      </div>
+
+      <div id="status" class="status">Ready.</div>
+
+      <div style="margin-top:12px">
+        <div class="metric">Last Response</div>
+        <pre id="lastResponse">{}</pre>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="metric">Request / Response Log</div>
+      <div id="log" class="log"></div>
+    </section>
+  </div>
+
+  <script>
+    const baseUrlInput = document.getElementById("baseUrl");
+    const taskNameInput = document.getElementById("taskName");
+    const seedInput = document.getElementById("seed");
+    const routeInput = document.getElementById("route");
+    const replyInput = document.getElementById("reply");
+    const resetBtn = document.getElementById("resetBtn");
+    const stepBtn = document.getElementById("stepBtn");
+    const stateBtn = document.getElementById("stateBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const status = document.getElementById("status");
+    const lastResponse = document.getElementById("lastResponse");
+    const log = document.getElementById("log");
+
+    function normBaseUrl() {
+      return (baseUrlInput.value || "").trim().replace(/\/$/, "");
+    }
+
+    function setBusy(isBusy) {
+      resetBtn.disabled = isBusy;
+      stepBtn.disabled = isBusy;
+      stateBtn.disabled = isBusy;
+    }
+
+    function updateStatus(message, isError) {
+      status.textContent = message;
+      status.className = "status " + (isError ? "bad" : "ok");
+    }
+
+    function rewardBadge(payload) {
+      const rewardRaw = payload && payload.reward;
+      const reward = Number(rewardRaw);
+      if (!Number.isFinite(reward)) {
+        return "reward=n/a";
+      }
+      const inRange = reward > 0 && reward < 1;
+      return "reward=" + reward.toFixed(2) + " range=" + (inRange ? "ok" : "bad");
+    }
+
+    function appendLog(endpoint, requestBody, responseBody, ok) {
+      const el = document.createElement("div");
+      el.className = "entry";
+      const head = document.createElement("div");
+      head.className = "entry-head";
+      const now = new Date().toLocaleTimeString();
+      head.textContent = now + " | " + endpoint + " | " + rewardBadge(responseBody);
+      head.style.color = ok ? "#0f8a4b" : "#c62828";
+
+      const req = document.createElement("pre");
+      req.textContent = "request: " + JSON.stringify(requestBody, null, 2);
+
+      const res = document.createElement("pre");
+      res.textContent = "response: " + JSON.stringify(responseBody, null, 2);
+
+      el.appendChild(head);
+      el.appendChild(req);
+      el.appendChild(res);
+      log.prepend(el);
+    }
+
+    async function apiCall(path, method, body) {
+      setBusy(true);
+      try {
+        const url = normBaseUrl() + path;
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+
+        let data;
+        const text = await res.text();
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          data = { raw: text };
+        }
+
+        lastResponse.textContent = JSON.stringify(data, null, 2);
+        appendLog(path, body || {}, data, res.ok);
+
+        if (!res.ok) {
+          updateStatus(path + " failed: HTTP " + res.status, true);
+          return;
+        }
+
+        updateStatus(path + " ok | " + rewardBadge(data), false);
+      } catch (err) {
+        const msg = err && err.message ? err.message : String(err);
+        updateStatus("Network error: " + msg, true);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    resetBtn.addEventListener("click", () => {
+      apiCall("/reset", "POST", {
+        task_name: taskNameInput.value,
+        seed: Number(seedInput.value),
+      });
+    });
+
+    stepBtn.addEventListener("click", () => {
+      apiCall("/step", "POST", {
+        action: {
+          route: routeInput.value,
+          reply: replyInput.value,
+        },
+      });
+    });
+
+    stateBtn.addEventListener("click", () => {
+      apiCall("/state", "GET");
+    });
+
+    clearBtn.addEventListener("click", () => {
+      log.innerHTML = "";
+      lastResponse.textContent = "{}";
+      updateStatus("Cleared log.", false);
+    });
+  </script>
+</body>
+</html>

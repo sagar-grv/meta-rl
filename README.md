@@ -84,6 +84,19 @@ pip install -e .[dev]
 pytest -q
 ```
 
+## Web Tester UI
+
+Use the built-in tester UI to manually exercise `reset`, `step`, and `state` without writing curl commands.
+
+Start the app locally:
+
+```powershell
+$env:PYTHONPATH="envs;."
+python -m uvicorn support_queue_env.server.app:app --host 127.0.0.1 --port 7860
+```
+
+Then open [http://127.0.0.1:7860/ui/](http://127.0.0.1:7860/ui/) in your browser.
+
 ## Baseline Inference
 
 The root-level `inference.py` uses the OpenAI client and reads runtime configuration from environment variables:
