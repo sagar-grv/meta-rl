@@ -14,6 +14,7 @@ from support_queue_env.tasks import TASK_SPECS, TaskSpec
 DEFAULT_API_BASE_URL = "https://router.huggingface.co/v1"
 DEFAULT_MODEL_NAME = "gpt-test"
 TASK_ENV_NAME = "support_queue"
+MODEL_CALL_MAX_ATTEMPTS = 2
 
 ESCALATION_CUES = (
     "escalat",
@@ -230,20 +231,29 @@ def get_model_message(
 ) -> str:
     prompt = build_user_prompt(step, last_echoed, last_reward, history)
     selected_model = model_name or os.getenv("MODEL_NAME", DEFAULT_MODEL_NAME)
+    last_error: Exception | None = None
 
-    completion = client.chat.completions.create(
-        model=selected_model,
-        messages=[
-            {"role": "system", "content": "You are a support queue agent."},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0,
-        max_tokens=128,
-        stream=False,
-        timeout=20,
-    )
-    text = (completion.choices[0].message.content or "").strip()
-    return text if text else "route=support; reply=Please help"
+    for _ in range(MODEL_CALL_MAX_ATTEMPTS):
+        try:
+            completion = client.chat.completions.create(
+                model=selected_model,
+                messages=[
+                    {"role": "system", "content": "You are a support queue agent."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0,
+                max_tokens=128,
+                stream=False,
+                timeout=20,
+            )
+            text = (completion.choices[0].message.content or "").strip()
+            return text if text else "route=support; reply=Please help"
+        except Exception as exc:
+            last_error = exc
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("Model call failed without a captured exception")
 
 
 def run_support_queue_baseline(
