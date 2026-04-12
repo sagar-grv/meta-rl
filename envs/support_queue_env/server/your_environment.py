@@ -119,7 +119,7 @@ class SupportQueueEnvironment:
         high_repetition_penalty = 0.09 if repetition_ratio >= 0.62 and token_count >= 8 else 0.0
         template_route_penalty = 0.05 if route_is_correct and moderate_low_relevance and token_count >= 4 else 0.0
         short_keyword_only_penalty = 0.05 if reply_has_keyword and token_count <= 4 and relevance_ratio < 0.20 else 0.0
-        keyword_spam_penalty = 0.30 if keyword_occurrences >= 3 and relevance_ratio < 0.35 else (0.08 if keyword_occurrences >= 2 and relevance_ratio < 0.25 else 0.0)
+        keyword_spam_penalty = 0.08 if keyword_occurrences >= 2 and relevance_ratio < 0.25 else 0.0
         mixed_intent_penalty = 0.08 if stuffing_count >= 5 and repetition_ratio >= 0.50 else 0.0
         apology_template_penalty = 0.06 if apology_template and token_count <= 7 and relevance_ratio < 0.20 else 0.0
         boilerplate_help_penalty = 0.05 if boilerplate_help and relevance_ratio < 0.25 else 0.0
