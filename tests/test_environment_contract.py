@@ -145,6 +145,73 @@ def test_contextual_success_score_is_high_but_not_saturated():
     assert 0.75 <= strong.reward <= 0.89
 
 
+def test_keyword_spam_is_weaker_than_contextual_response():
+    env = SupportQueueEnvironment(seed=7, task_name="reply_drafting")
+    env.reset()
+    keyword_spam = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="refund refund refund refund refund refund refund refund please refund",
+        )
+    )
+
+    env = SupportQueueEnvironment(seed=7, task_name="reply_drafting")
+    env.reset()
+    contextual = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="I can help with your refund request and share policy-safe next steps.",
+        )
+    )
+
+    assert keyword_spam.reward < contextual.reward
+    assert keyword_spam.reward <= 0.45
+
+
+def test_apology_template_is_weaker_than_contextual_response():
+    env = SupportQueueEnvironment(seed=7, task_name="ticket_triage")
+    env.reset()
+    apology_template = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="Sorry for the inconvenience, we are reviewing your case.",
+        )
+    )
+
+    env = SupportQueueEnvironment(seed=7, task_name="ticket_triage")
+    env.reset()
+    contextual = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="I can help resolve your login issue and guide the account recovery steps.",
+        )
+    )
+
+    assert apology_template.reward < contextual.reward
+
+
+def test_mixed_intent_stuffing_is_weaker_than_contextual_response():
+    env = SupportQueueEnvironment(seed=7, task_name="escalation_resolution")
+    env.reset()
+    mixed_intent = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="login refund escalate policy billing handoff dispute account password customer request issue dispute refund",
+        )
+    )
+
+    env = SupportQueueEnvironment(seed=7, task_name="escalation_resolution")
+    env.reset()
+    contextual = env.step(
+        SupportQueueAction(
+            route="escalate",
+            reply="I will escalate this case with a compliant handoff.",
+        )
+    )
+
+    assert mixed_intent.reward < contextual.reward
+
+
 def test_reward_model_clamps_boundary_scores_into_open_interval():
     low = SupportQueueReward(score=0.0)
     high = SupportQueueReward(score=1.0)
