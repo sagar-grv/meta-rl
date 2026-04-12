@@ -11,6 +11,31 @@ def test_ui_route_returns_tester_page():
     assert "Support Queue Agent Tester" in response.text
 
 
+def test_ui_api_preserves_selected_task_for_step():
+    with TestClient(app) as client:
+        reset_response = client.post(
+            "/ui-api/reset",
+            json={"task_name": "escalation_resolution", "seed": 7},
+        )
+        step_response = client.post(
+            "/ui-api/step",
+            json={
+                "task_name": "escalation_resolution",
+                "seed": 7,
+                "action": {
+                    "route": "escalate",
+                    "reply": "I will escalate this case with a compliant handoff.",
+                },
+            },
+        )
+
+    assert reset_response.status_code == 200
+    assert step_response.status_code == 200
+    assert reset_response.json()["task_name"] == "escalation_resolution"
+    assert step_response.json()["task_name"] == "escalation_resolution"
+    assert step_response.json()["observation"]["ticket_id"] == "ticket-003"
+
+
 def test_health_endpoint_returns_ok():
     with TestClient(app) as client:
         response = client.get("/health")

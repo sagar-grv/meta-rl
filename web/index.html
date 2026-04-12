@@ -320,14 +320,16 @@
     }
 
     resetBtn.addEventListener("click", () => {
-      apiCall("/reset", "POST", {
+      apiCall("/ui-api/reset", "POST", {
         task_name: taskNameInput.value,
         seed: Number(seedInput.value),
       });
     });
 
     stepBtn.addEventListener("click", () => {
-      apiCall("/step", "POST", {
+      apiCall("/ui-api/step", "POST", {
+        task_name: taskNameInput.value,
+        seed: Number(seedInput.value),
         action: {
           route: routeInput.value,
           reply: replyInput.value,
@@ -336,7 +338,7 @@
     });
 
     stateBtn.addEventListener("click", () => {
-      apiCall("/state", "GET");
+      apiCall("/ui-api/state", "GET");
     });
 
     clearBtn.addEventListener("click", () => {

@@ -96,6 +96,19 @@ def test_repetitive_reply_is_penalized_against_contextual_reply():
     assert repetitive.reward < contextual.reward
 
 
+def test_repetitive_refund_spam_stays_below_strict_threshold():
+    env = SupportQueueEnvironment(seed=7, task_name="reply_drafting")
+    env.reset()
+    repetitive = env.step(
+        SupportQueueAction(
+            route="support",
+            reply="refund refund refund refund refund refund refund",
+        )
+    )
+
+    assert repetitive.reward <= 0.50
+
+
 def test_offtopic_keyword_only_reply_is_penalized_for_login_task():
     env = SupportQueueEnvironment(seed=7, task_name="ticket_triage")
     env.reset()
@@ -143,6 +156,19 @@ def test_contextual_success_score_is_high_but_not_saturated():
 
     # Keep strong responses high while preserving gradient for judge-round robustness.
     assert 0.75 <= strong.reward <= 0.89
+
+
+def test_escalation_contextual_reply_stays_high_under_strict_rule():
+    env = SupportQueueEnvironment(seed=7, task_name="escalation_resolution")
+    env.reset()
+    strong = env.step(
+        SupportQueueAction(
+            route="escalate",
+            reply="I will escalate this billing dispute with a compliant handoff and include case context for specialist review.",
+        )
+    )
+
+    assert strong.reward >= 0.80
 
 
 def test_reward_model_clamps_boundary_scores_into_open_interval():
