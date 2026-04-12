@@ -110,12 +110,16 @@ def build_step_log(*, step: int, action: str, reward: float, done: bool, error: 
     return f"[STEP] step={step} action={action_text} reward={reward:.2f} done={_bool_lower(done)} error={error_text}"
 
 
-def build_end_log(*, success: bool, steps: int, rewards: Iterable[float]) -> str:
+def build_end_log(*, success: bool, score: float, steps: int, rewards: Iterable[float]) -> str:
     normalized_rewards = [_ensure_open_interval(reward) for reward in rewards]
     if not normalized_rewards:
         normalized_rewards = [0.11]
+    normalized_score = _ensure_open_interval(score)
     reward_text = ",".join(f"{reward:.2f}" for reward in normalized_rewards)
-    return f"[END] success={_bool_lower(success)} steps={steps} rewards={reward_text}"
+    return (
+        f"[END] success={_bool_lower(success)} score={normalized_score:.2f} "
+        f"steps={steps} rewards={reward_text}"
+    )
 
 
 def _ensure_open_interval(score: float) -> float:
@@ -349,6 +353,7 @@ def run_support_queue_baseline(
             print(
                 build_end_log(
                     success=score >= 0.5,
+                    score=score,
                     steps=steps_taken,
                     rewards=logged_rewards,
                 ),

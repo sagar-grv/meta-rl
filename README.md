@@ -107,7 +107,7 @@ The script emits exactly three log line types in this order:
 ```text
 [START] task=<task_name> env=<benchmark> model=<model_name>
 [STEP] step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>
-[END] success=<true|false> steps=<n> rewards=<r1,r2,...,rn>
+[END] success=<true|false> score=<0.00-0.99> steps=<n> rewards=<r1,r2,...,rn>
 ```
 
 Each line stays on a single line, rewards are formatted to two decimals, and the script always emits `[END]` even on exception.

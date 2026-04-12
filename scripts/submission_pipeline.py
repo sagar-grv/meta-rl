@@ -39,7 +39,17 @@ def build_preflight_steps(base_url: str) -> list[PipelineStep]:
 def run_preflight(base_url: str) -> int:
     for step in build_preflight_steps(base_url):
         print(f"[PRECHECK] {step.name}: {' '.join(step.command)}")
-        completed = subprocess.run(step.command, cwd=ROOT, check=False)
+        env = None
+        if step.name == "inference_smoke":
+            env = os.environ.copy()
+            existing_pythonpath = env.get("PYTHONPATH", "")
+            extra_paths = [str(ROOT / "envs"), str(ROOT)]
+            env["PYTHONPATH"] = os.pathsep.join([*extra_paths, existing_pythonpath]).strip(os.pathsep)
+            env.setdefault("API_BASE_URL", "https://router.huggingface.co/v1")
+            env.setdefault("MODEL_NAME", "gpt-test")
+            env.setdefault("HF_TOKEN", "hf_dummy")
+
+        completed = subprocess.run(step.command, cwd=ROOT, check=False, env=env)
         if completed.returncode != 0:
             print(f"[PRECHECK-FAIL] {step.name} exited with {completed.returncode}")
             return completed.returncode
@@ -91,7 +101,17 @@ def build_pre_submit_steps(base_url: str, space_id: str, expected_sha: str, evid
 def run_pre_submit(base_url: str, space_id: str, expected_sha: str, evidence_output: str) -> int:
     for step in build_pre_submit_steps(base_url, space_id, expected_sha, evidence_output):
         print(f"[PRESUBMIT] {step.name}: {' '.join(step.command)}")
-        completed = subprocess.run(step.command, cwd=ROOT, check=False)
+        env = None
+        if step.name == "inference_smoke":
+            env = os.environ.copy()
+            existing_pythonpath = env.get("PYTHONPATH", "")
+            extra_paths = [str(ROOT / "envs"), str(ROOT)]
+            env["PYTHONPATH"] = os.pathsep.join([*extra_paths, existing_pythonpath]).strip(os.pathsep)
+            env.setdefault("API_BASE_URL", "https://router.huggingface.co/v1")
+            env.setdefault("MODEL_NAME", "gpt-test")
+            env.setdefault("HF_TOKEN", "hf_dummy")
+
+        completed = subprocess.run(step.command, cwd=ROOT, check=False, env=env)
         if completed.returncode != 0:
             print(f"[PRESUBMIT-FAIL] {step.name} exited with {completed.returncode}")
             return completed.returncode
