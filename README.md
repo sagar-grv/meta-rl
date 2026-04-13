@@ -120,6 +120,37 @@ Log output contract:
 [END] success=<true|false> score=<0.00-0.99> steps=<n> rewards=<r1,r2,...,rn>
 ```
 
+## Demo Script
+
+Official demo entrypoint: `inference.py`
+
+This script runs the benchmark tasks and prints `[START]`, `[STEP]`, and `[END]` logs in the expected format.
+
+Quick demo run:
+
+```powershell
+$env:API_BASE_URL="https://router.huggingface.co/v1"
+$env:MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
+$env:HF_TOKEN="hf_your_token"
+$env:PYTHONPATH="envs;."
+python .\inference.py
+```
+
+Expected result:
+
+- Script completes without crash
+- `[END]` is always emitted
+- Per-task scores remain strictly in `(0, 1)`
+
+## Submission Checklist
+
+- Public GitHub repository: https://github.com/sagar-grv/meta-rl
+- Deployed Hugging Face Space demo: https://huggingface.co/spaces/sagar-grv/anything_you_want
+- Environment implementation: `envs/support_queue_env/`
+- Requirements file: `requirements.txt`
+- Demo script: `inference.py`
+- Documentation: `README.md`
+
 ## Submission Safety Checks
 
 Local preflight:
