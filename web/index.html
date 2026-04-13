@@ -87,6 +87,12 @@
       margin-top: 12px;
     }
 
+    .hint {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     button {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -203,6 +209,23 @@
         <textarea id="reply">I can help resolve your login issue and guide account recovery steps.</textarea>
       </div>
 
+      <div style="margin-top:10px" class="grid">
+        <div>
+          <label for="exampleSelect">Example Scenarios</label>
+          <select id="exampleSelect">
+            <option value="ticket_good">Ticket triage - strong</option>
+            <option value="refund_good">Reply drafting - policy safe</option>
+            <option value="escalation_good">Escalation resolution - compliant handoff</option>
+            <option value="spam_bad">Anti-shortcut check - repetitive spam</option>
+          </select>
+        </div>
+        <div class="actions" style="align-items:flex-end; margin-top:0;">
+          <button id="loadExampleBtn">Load Example</button>
+          <button id="runExampleBtn" class="primary">Run Example (Reset + Step)</button>
+        </div>
+      </div>
+      <div class="hint">Tip: Start with strong examples, then compare against spam/off-topic responses to verify scorer behavior.</div>
+
       <div class="actions">
         <button id="resetBtn" class="primary">Reset</button>
         <button id="stepBtn">Step</button>
@@ -230,6 +253,9 @@
     const seedInput = document.getElementById("seed");
     const routeInput = document.getElementById("route");
     const replyInput = document.getElementById("reply");
+    const exampleSelect = document.getElementById("exampleSelect");
+    const loadExampleBtn = document.getElementById("loadExampleBtn");
+    const runExampleBtn = document.getElementById("runExampleBtn");
     const resetBtn = document.getElementById("resetBtn");
     const stepBtn = document.getElementById("stepBtn");
     const stateBtn = document.getElementById("stateBtn");
@@ -237,6 +263,45 @@
     const status = document.getElementById("status");
     const lastResponse = document.getElementById("lastResponse");
     const log = document.getElementById("log");
+
+    const EXAMPLES = {
+      ticket_good: {
+        task_name: "ticket_triage",
+        seed: 7,
+        route: "support",
+        reply: "I can help resolve your login issue and guide account recovery steps.",
+      },
+      refund_good: {
+        task_name: "reply_drafting",
+        seed: 7,
+        route: "support",
+        reply: "I can help with your refund request and share policy-safe next steps.",
+      },
+      escalation_good: {
+        task_name: "escalation_resolution",
+        seed: 7,
+        route: "escalate",
+        reply: "I will escalate this billing dispute with a compliant handoff and include case context.",
+      },
+      spam_bad: {
+        task_name: "reply_drafting",
+        seed: 7,
+        route: "support",
+        reply: "refund refund refund refund refund refund refund",
+      },
+    };
+
+    function applyExample(name) {
+      const sample = EXAMPLES[name];
+      if (!sample) {
+        return;
+      }
+      taskNameInput.value = sample.task_name;
+      seedInput.value = sample.seed;
+      routeInput.value = sample.route;
+      replyInput.value = sample.reply;
+      updateStatus("Loaded example: " + name, false);
+    }
 
     function normBaseUrl() {
       return (baseUrlInput.value || "").trim().replace(/\/$/, "");
@@ -246,6 +311,8 @@
       resetBtn.disabled = isBusy;
       stepBtn.disabled = isBusy;
       stateBtn.disabled = isBusy;
+      loadExampleBtn.disabled = isBusy;
+      runExampleBtn.disabled = isBusy;
     }
 
     function updateStatus(message, isError) {
@@ -307,16 +374,38 @@
 
         if (!res.ok) {
           updateStatus(path + " failed: HTTP " + res.status, true);
-          return;
+          return { ok: false, data, status: res.status };
         }
 
         updateStatus(path + " ok | " + rewardBadge(data), false);
+        return { ok: true, data, status: res.status };
       } catch (err) {
         const msg = err && err.message ? err.message : String(err);
         updateStatus("Network error: " + msg, true);
+        return { ok: false, error: msg };
       } finally {
         setBusy(false);
       }
+    }
+
+    async function runExampleFlow() {
+      const sampleName = exampleSelect.value;
+      applyExample(sampleName);
+      const resetResult = await apiCall("/ui-api/reset", "POST", {
+        task_name: taskNameInput.value,
+        seed: Number(seedInput.value),
+      });
+      if (!resetResult || !resetResult.ok) {
+        return;
+      }
+      await apiCall("/ui-api/step", "POST", {
+        task_name: taskNameInput.value,
+        seed: Number(seedInput.value),
+        action: {
+          route: routeInput.value,
+          reply: replyInput.value,
+        },
+      });
     }
 
     resetBtn.addEventListener("click", () => {
@@ -346,6 +435,19 @@
       lastResponse.textContent = "{}";
       updateStatus("Cleared log.", false);
     });
+
+    loadExampleBtn.addEventListener("click", () => {
+      applyExample(exampleSelect.value);
+    });
+
+    runExampleBtn.addEventListener("click", () => {
+      runExampleFlow();
+    });
+
+    if (!baseUrlInput.value) {
+      baseUrlInput.value = window.location.origin;
+    }
+    applyExample(exampleSelect.value);
   </script>
 </body>
 </html>

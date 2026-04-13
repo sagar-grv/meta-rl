@@ -9,6 +9,7 @@ def test_ui_route_returns_tester_page():
 
     assert response.status_code == 200
     assert "Support Queue Agent Tester" in response.text
+    assert "Example Scenarios" in response.text
 
 
 def test_ui_api_preserves_selected_task_for_step():
