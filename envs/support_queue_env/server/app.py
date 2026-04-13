@@ -15,6 +15,17 @@ except Exception:  # pragma: no cover
 from support_queue_env.models import SupportQueueAction, SupportQueueObservation
 from support_queue_env.server.your_environment import SupportQueueEnvironment
 
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+ENABLE_LOCAL_TEST_DASHBOARD = _env_flag("ENABLE_LOCAL_TEST_DASHBOARD", default=False)
+
+
 app = create_app(
     SupportQueueEnvironment,
     SupportQueueAction,
@@ -23,7 +34,7 @@ app = create_app(
 )
 
 WEB_DIR = Path(__file__).resolve().parents[3] / "web"
-if WEB_DIR.exists():
+if ENABLE_LOCAL_TEST_DASHBOARD and WEB_DIR.exists():
     app.mount("/ui", StaticFiles(directory=str(WEB_DIR), html=True), name="ui")
 
 
@@ -45,43 +56,44 @@ def _ensure_ui_env(task_name: str | None, seed: int | None) -> SupportQueueEnvir
     return _ui_env
 
 
-@app.post("/ui-api/reset")
-def ui_reset(payload: dict[str, Any] = Body(default_factory=dict)) -> dict[str, Any]:
-    task_name = payload.get("task_name")
-    seed = payload.get("seed")
-    env = _ensure_ui_env(task_name, seed)
-    result = env.reset(task_name=task_name, seed=seed)
-    return {
-        "task_name": env.task_name,
-        "reward": result.reward,
-        "done": result.done,
-        "observation": result.observation.model_dump(),
-        "info": result.info,
-    }
+if ENABLE_LOCAL_TEST_DASHBOARD:
+    @app.post("/ui-api/reset")
+    def ui_reset(payload: dict[str, Any] = Body(default_factory=dict)) -> dict[str, Any]:
+        task_name = payload.get("task_name")
+        seed = payload.get("seed")
+        env = _ensure_ui_env(task_name, seed)
+        result = env.reset(task_name=task_name, seed=seed)
+        return {
+            "task_name": env.task_name,
+            "reward": result.reward,
+            "done": result.done,
+            "observation": result.observation.model_dump(),
+            "info": result.info,
+        }
 
 
-@app.post("/ui-api/step")
-def ui_step(payload: dict[str, Any] = Body(default_factory=dict)) -> dict[str, Any]:
-    task_name = payload.get("task_name")
-    seed = payload.get("seed")
-    env = _ensure_ui_env(task_name, seed)
+    @app.post("/ui-api/step")
+    def ui_step(payload: dict[str, Any] = Body(default_factory=dict)) -> dict[str, Any]:
+        task_name = payload.get("task_name")
+        seed = payload.get("seed")
+        env = _ensure_ui_env(task_name, seed)
 
-    action_payload = payload.get("action") or {}
-    action = SupportQueueAction(**action_payload)
-    result = env.step(action)
-    return {
-        "task_name": env.task_name,
-        "reward": result.reward,
-        "done": result.done,
-        "observation": result.observation.model_dump(),
-        "info": result.info,
-    }
+        action_payload = payload.get("action") or {}
+        action = SupportQueueAction(**action_payload)
+        result = env.step(action)
+        return {
+            "task_name": env.task_name,
+            "reward": result.reward,
+            "done": result.done,
+            "observation": result.observation.model_dump(),
+            "info": result.info,
+        }
 
 
-@app.get("/ui-api/state")
-def ui_state() -> dict[str, Any]:
-    env = _ensure_ui_env(task_name=None, seed=None)
-    return env.state.model_dump()
+    @app.get("/ui-api/state")
+    def ui_state() -> dict[str, Any]:
+        env = _ensure_ui_env(task_name=None, seed=None)
+        return env.state.model_dump()
 
 
 @app.get("/")

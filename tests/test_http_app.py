@@ -1,4 +1,8 @@
+import os
+
 from fastapi.testclient import TestClient
+
+os.environ["ENABLE_LOCAL_TEST_DASHBOARD"] = "1"
 
 from support_queue_env.server.app import app
 

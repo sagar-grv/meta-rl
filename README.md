@@ -56,10 +56,13 @@ The dashboard is served at `/ui/` and provides manual testing for:
 - `POST /ui-api/step`
 - `GET /ui-api/state`
 
+The dashboard is **local-only by default**. It is disabled unless `ENABLE_LOCAL_TEST_DASHBOARD=1`, so HF Space runtime and baseline inference behavior remain unchanged.
+
 Start locally:
 
 ```powershell
 $env:PYTHONPATH="envs;."
+$env:ENABLE_LOCAL_TEST_DASHBOARD="1"
 python -m uvicorn support_queue_env.server.app:app --host 127.0.0.1 --port 7860
 ```
 

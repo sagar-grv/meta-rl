@@ -4,6 +4,7 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    ENABLE_LOCAL_TEST_DASHBOARD=0 \
     PYTHONPATH=/app/envs:/app
 
 COPY pyproject.toml /app/pyproject.toml
